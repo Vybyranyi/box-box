@@ -14,9 +14,9 @@ export const SECONDS_PER_KG = 0.03;
 export const FULL_RACE_FUEL_KG = 70;
 
 export const PACE_MODE = {
-  push: { time: -0.3, wear: 1.35, risk: 1.3 },
+  push: { time: -0.5, wear: 1.25, risk: 1.3 },
   balanced: { time: 0, wear: 1, risk: 1 },
-  conserve: { time: 0.45, wear: 0.7, risk: 0.8 },
+  conserve: { time: 0.35, wear: 0.65, risk: 0.8 },
 } satisfies Record<PaceMode, { time: number; wear: number; risk: number }>;
 
 /**

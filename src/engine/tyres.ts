@@ -8,8 +8,8 @@ export const isDry = (c: Compound): c is DryCompound =>
 /** Lap time offset on a dry track vs a fresh soft, in seconds for a 90 s lap. */
 const DRY_OFFSET: Record<Compound, number> = {
   soft: 0,
-  medium: 0.35,
-  hard: 0.7,
+  medium: 0.5,
+  hard: 0.95,
   intermediate: 4.0,
   wet: 7.0,
 };

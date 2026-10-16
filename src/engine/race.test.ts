@@ -147,9 +147,15 @@ describe("race", () => {
     const race = createRace({ ...base, grid, playerTeamId: "mclaren" });
     const norris = race.carByDriver("norris")!;
     const piastri = race.carByDriver("piastri")!;
-    runUntil(race, () => race.leaderLap >= 3);
+    runUntil(
+      race,
+      () =>
+        race.leaderLap >= 3 &&
+        norris.position === piastri.position + 1 &&
+        norris.interval !== null &&
+        norris.interval < 2.5,
+    );
     expect(norris.position).toBe(piastri.position + 1);
-    expect(norris.interval!).toBeLessThan(2.5);
     race.command({ type: "team-order", teamId: "mclaren", order: "swap" });
     const orderedAt = race.time;
     runUntil(race, () => norris.position < piastri.position);

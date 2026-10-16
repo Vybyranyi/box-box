@@ -57,6 +57,8 @@ const OVERTAKE_BASE = [0.6, 0.4, 0.25, 0.12, 0.04];
 const DIRTY_AIR = 0.35;
 /** Gap at which a faster car is close enough to attempt a pass, in seconds. */
 const ATTACK_GAP = 0.3;
+/** Overtaking is easier on the lap after a Safety Car restart, with the field bunched up. */
+const RESTART_OVERTAKE_BOOST = 1.8;
 /** Chance a crash brings out the SC / VSC; the rest are cleared under yellows. */
 const CRASH_SC = 0.5;
 const CRASH_VSC = 0.3;
@@ -111,6 +113,8 @@ export class Race {
   private readonly rng: Rng;
   private readonly refLap: number;
   private readonly scSpeed: number;
+  /** Race time until which the Safety Car restart makes overtaking easier. */
+  private restartUntil = -1;
   private readonly crashRatePerCarLap: number;
   private readonly fuelPerLap: number;
   private readonly startDelay: number[];
@@ -784,7 +788,8 @@ export class Race {
       OVERTAKE_BASE[difficulty - 1] *
       Math.min(3, Math.max(0, (delta - 0.1) / 0.9)) *
       Math.max(0.2, rc) *
-      (car.lap === 0 ? 2 : 1)
+      (car.lap === 0 ? 2 : 1) *
+      (this.time < this.restartUntil ? RESTART_OVERTAKE_BOOST : 1)
     );
   }
 
@@ -1086,6 +1091,7 @@ export class Race {
     if (this.leaderLap >= sc.endsOnLap) {
       sc.status = "green";
       sc.endsOnLap = null;
+      this.restartUntil = this.time + this.refLap;
       this.emit({ type: "green" });
     }
   }

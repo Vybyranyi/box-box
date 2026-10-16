@@ -119,8 +119,13 @@ describe("pit window and battles", () => {
   it("explains battles: attacking, stuck with a reason, and defending", () => {
     const keys = new Set<string>();
     const tips = new Set<string>();
-    for (const seed of [1, 2, 3, 4]) {
-      const race = raceAt("hungaroring", seed, 30);
+    for (const [trackId, seed] of [
+      ["hungaroring", 1],
+      ["hungaroring", 2],
+      ["silverstone", 1],
+      ["silverstone", 2],
+    ] as const) {
+      const race = raceAt(trackId, seed, 30);
       followAdvice(race, () => {
         for (const car of race.cars) {
           for (const insight of carInsights(race, car)) {

@@ -190,11 +190,11 @@
     "pace": {
       "label": "Pace mode",
       "push": "Push",
-      "pushHint": "Faster, but wears tyres ~35% quicker",
+      "pushHint": "~0.5 s a lap faster, but wears tyres ~25% quicker",
       "balanced": "Balanced",
       "balancedHint": "Normal race pace",
       "conserve": "Conserve",
-      "conserveHint": "Slower, tyres last ~30% longer"
+      "conserveHint": "~0.35 s a lap slower, tyres last ~50% longer"
     },
     "inPitLane": "In the pit lane",
     "boxThisLap": "Box this lap",
