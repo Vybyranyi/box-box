@@ -7,6 +7,11 @@ const eslintConfig = defineConfig([
   ...nextVitals,
   ...nextTs,
   prettier,
+  {
+    // Official images are hotlinked with a plain <img> on purpose (see CLAUDE.md).
+    files: ["src/components/remote-image.tsx"],
+    rules: { "@next/next/no-img-element": "off" },
+  },
   // Override default ignores of eslint-config-next.
   globalIgnores([
     // Default ignores of eslint-config-next:

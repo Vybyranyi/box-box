@@ -28,7 +28,7 @@ Driver headshots, team logos and car renders come from the formula1.com CDN, and
 ## Structure
 
 - `src/engine/` - race simulation in pure TypeScript. Must not import React, Next or anything browser-specific. Deterministic: the same seed and the same player decisions always produce the same race.
-- `src/data/` - generated JSON (teams, drivers, ratings, tracks), committed to the repo.
+- `src/data/` - generated JSON (teams, drivers, tracks, calendar), committed to the repo. Import it through `src/data/index.ts`. Never edit the JSON by hand: change `scripts/curated/*` or the script and run `npm run data`.
 - `src/app/`, `src/components/` - UI. The race map is drawn with Canvas 2D; the HUD is React.
 - `scripts/` - data collection scripts (Jolpica, OpenF1, `bacinger/f1-circuits` GeoJSON), run manually with `tsx`. The Vercel build never calls external APIs.
 

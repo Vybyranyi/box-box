@@ -1,0 +1,140 @@
+[
+  {
+    "round": 1,
+    "name": "Australian Grand Prix",
+    "date": "2026-03-08",
+    "trackId": "albert_park"
+  },
+  {
+    "round": 2,
+    "name": "Chinese Grand Prix",
+    "date": "2026-03-15",
+    "trackId": "shanghai"
+  },
+  {
+    "round": 3,
+    "name": "Japanese Grand Prix",
+    "date": "2026-03-29",
+    "trackId": "suzuka"
+  },
+  {
+    "round": 4,
+    "name": "Miami Grand Prix",
+    "date": "2026-05-03",
+    "trackId": "miami"
+  },
+  {
+    "round": 5,
+    "name": "Canadian Grand Prix",
+    "date": "2026-05-24",
+    "trackId": "villeneuve"
+  },
+  {
+    "round": 6,
+    "name": "Monaco Grand Prix",
+    "date": "2026-06-07",
+    "trackId": "monaco"
+  },
+  {
+    "round": 7,
+    "name": "Barcelona Grand Prix",
+    "date": "2026-06-14",
+    "trackId": "catalunya"
+  },
+  {
+    "round": 8,
+    "name": "Austrian Grand Prix",
+    "date": "2026-06-28",
+    "trackId": "red_bull_ring"
+  },
+  {
+    "round": 9,
+    "name": "British Grand Prix",
+    "date": "2026-07-05",
+    "trackId": "silverstone"
+  },
+  {
+    "round": 10,
+    "name": "Belgian Grand Prix",
+    "date": "2026-07-19",
+    "trackId": "spa"
+  },
+  {
+    "round": 11,
+    "name": "Hungarian Grand Prix",
+    "date": "2026-07-26",
+    "trackId": "hungaroring"
+  },
+  {
+    "round": 12,
+    "name": "Dutch Grand Prix",
+    "date": "2026-08-23",
+    "trackId": "zandvoort"
+  },
+  {
+    "round": 13,
+    "name": "Italian Grand Prix",
+    "date": "2026-09-06",
+    "trackId": "monza"
+  },
+  {
+    "round": 14,
+    "name": "Spanish Grand Prix",
+    "date": "2026-09-13",
+    "trackId": "madring"
+  },
+  {
+    "round": 15,
+    "name": "Azerbaijan Grand Prix",
+    "date": "2026-09-26",
+    "trackId": "baku"
+  },
+  {
+    "round": 16,
+    "name": "Bahrain Grand Prix in Malaysia",
+    "date": "2026-10-04",
+    "trackId": "sepang"
+  },
+  {
+    "round": 17,
+    "name": "Singapore Grand Prix",
+    "date": "2026-10-11",
+    "trackId": "marina_bay"
+  },
+  {
+    "round": 18,
+    "name": "United States Grand Prix",
+    "date": "2026-10-25",
+    "trackId": "americas"
+  },
+  {
+    "round": 19,
+    "name": "Mexico City Grand Prix",
+    "date": "2026-11-01",
+    "trackId": "rodriguez"
+  },
+  {
+    "round": 20,
+    "name": "Brazilian Grand Prix",
+    "date": "2026-11-08",
+    "trackId": "interlagos"
+  },
+  {
+    "round": 21,
+    "name": "Las Vegas Grand Prix",
+    "date": "2026-11-22",
+    "trackId": "vegas"
+  },
+  {
+    "round": 22,
+    "name": "Qatar Grand Prix",
+    "date": "2026-11-29",
+    "trackId": "losail"
+  },
+  {
+    "round": 23,
+    "name": "Abu Dhabi Grand Prix",
+    "date": "2026-12-06",
+    "trackId": "yas_marina"
+  }
+]

@@ -1,0 +1,211 @@
+[
+  {
+    "id": "mercedes",
+    "name": "Mercedes",
+    "shortName": "Mercedes",
+    "color": "#00D7B6",
+    "powerUnit": "Mercedes",
+    "mediaSlug": "mercedes",
+    "championship": {
+      "position": 1,
+      "points": 578
+    },
+    "car": {
+      "paceDeficitPct": 0,
+      "powerTrackDeltaPct": 0,
+      "downforceTrackDeltaPct": 0,
+      "tyreWear": 0.97,
+      "reliability": 0.948
+    }
+  },
+  {
+    "id": "ferrari",
+    "name": "Ferrari",
+    "shortName": "Ferrari",
+    "color": "#ED1131",
+    "powerUnit": "Ferrari",
+    "mediaSlug": "ferrari",
+    "championship": {
+      "position": 2,
+      "points": 444
+    },
+    "car": {
+      "paceDeficitPct": 0.357,
+      "powerTrackDeltaPct": 0.027,
+      "downforceTrackDeltaPct": -0.111,
+      "tyreWear": 1,
+      "reliability": 0.948
+    }
+  },
+  {
+    "id": "mclaren",
+    "name": "McLaren",
+    "shortName": "McLaren",
+    "color": "#F47600",
+    "powerUnit": "Mercedes",
+    "mediaSlug": "mclaren",
+    "championship": {
+      "position": 3,
+      "points": 339
+    },
+    "car": {
+      "paceDeficitPct": 0.431,
+      "powerTrackDeltaPct": -0.006,
+      "downforceTrackDeltaPct": -0.023,
+      "tyreWear": 0.94,
+      "reliability": 0.948
+    }
+  },
+  {
+    "id": "red_bull",
+    "name": "Red Bull",
+    "shortName": "Red Bull",
+    "color": "#4781D7",
+    "powerUnit": "Red Bull Ford",
+    "mediaSlug": "redbullracing",
+    "championship": {
+      "position": 4,
+      "points": 332
+    },
+    "car": {
+      "paceDeficitPct": 0.458,
+      "powerTrackDeltaPct": -0.003,
+      "downforceTrackDeltaPct": 0.127,
+      "tyreWear": 1,
+      "reliability": 0.93
+    }
+  },
+  {
+    "id": "rb",
+    "name": "RB F1 Team",
+    "shortName": "Racing Bulls",
+    "color": "#6C98FF",
+    "powerUnit": "Red Bull Ford",
+    "mediaSlug": "racingbulls",
+    "championship": {
+      "position": 5,
+      "points": 100
+    },
+    "car": {
+      "paceDeficitPct": 1.391,
+      "powerTrackDeltaPct": -0.265,
+      "downforceTrackDeltaPct": 0,
+      "tyreWear": 1.02,
+      "reliability": 0.976
+    }
+  },
+  {
+    "id": "alpine",
+    "name": "Alpine F1 Team",
+    "shortName": "Alpine",
+    "color": "#00A1E8",
+    "powerUnit": "Mercedes",
+    "mediaSlug": "alpine",
+    "championship": {
+      "position": 6,
+      "points": 68
+    },
+    "car": {
+      "paceDeficitPct": 1.542,
+      "powerTrackDeltaPct": 0,
+      "downforceTrackDeltaPct": 0.338,
+      "tyreWear": 1.02,
+      "reliability": 0.948
+    }
+  },
+  {
+    "id": "haas",
+    "name": "Haas F1 Team",
+    "shortName": "Haas",
+    "color": "#9C9FA2",
+    "powerUnit": "Ferrari",
+    "mediaSlug": "haasf1team",
+    "championship": {
+      "position": 7,
+      "points": 30
+    },
+    "car": {
+      "paceDeficitPct": 2.284,
+      "powerTrackDeltaPct": -0.056,
+      "downforceTrackDeltaPct": 0.3,
+      "tyreWear": 0.98,
+      "reliability": 0.939
+    }
+  },
+  {
+    "id": "audi",
+    "name": "Audi",
+    "shortName": "Audi",
+    "color": "#F50537",
+    "powerUnit": "Audi",
+    "mediaSlug": "audi",
+    "championship": {
+      "position": 8,
+      "points": 23
+    },
+    "car": {
+      "paceDeficitPct": 1.544,
+      "powerTrackDeltaPct": 0.15,
+      "downforceTrackDeltaPct": -0.008,
+      "tyreWear": 1.03,
+      "reliability": 0.948
+    }
+  },
+  {
+    "id": "williams",
+    "name": "Williams",
+    "shortName": "Williams",
+    "color": "#1868DB",
+    "powerUnit": "Mercedes",
+    "mediaSlug": "williams",
+    "championship": {
+      "position": 9,
+      "points": 12
+    },
+    "car": {
+      "paceDeficitPct": 2.447,
+      "powerTrackDeltaPct": -0.083,
+      "downforceTrackDeltaPct": 0.234,
+      "tyreWear": 1.04,
+      "reliability": 0.902
+    }
+  },
+  {
+    "id": "aston_martin",
+    "name": "Aston Martin",
+    "shortName": "Aston Martin",
+    "color": "#229971",
+    "powerUnit": "Honda",
+    "mediaSlug": "astonmartin",
+    "championship": {
+      "position": 10,
+      "points": 7
+    },
+    "car": {
+      "paceDeficitPct": 3.967,
+      "powerTrackDeltaPct": 0.091,
+      "downforceTrackDeltaPct": 0.273,
+      "tyreWear": 1.03,
+      "reliability": 0.828
+    }
+  },
+  {
+    "id": "cadillac",
+    "name": "Cadillac F1 Team",
+    "shortName": "Cadillac",
+    "color": "#909090",
+    "powerUnit": "Ferrari",
+    "mediaSlug": "cadillac",
+    "championship": {
+      "position": 11,
+      "points": 0
+    },
+    "car": {
+      "paceDeficitPct": 3.928,
+      "powerTrackDeltaPct": 0,
+      "downforceTrackDeltaPct": -0.047,
+      "tyreWear": 1.05,
+      "reliability": 0.865
+    }
+  }
+]

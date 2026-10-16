@@ -42,3 +42,6 @@ next-env.d.ts
 
 # local plan, not for git
 PLAN.md
+
+# data script cache
+/scripts/.cache
