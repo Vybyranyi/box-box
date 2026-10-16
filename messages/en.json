@@ -488,7 +488,7 @@
       "2": "<b>Centre: the map.</b> Dots are cars in their team colours; yours have a white ring. Cars in the pits move along the dashed pit lane.",
       "3": "<b>Right: your pit wall.</b> One card per driver, the team orders and the radio.",
       "4": "<b>Top:</b> track status (green / Safety Car), weather, pause and speed. A race at 1× takes as long as a real one, so play at <k>4×</k>–<k>8×</k>: auto-pause stops the race whenever something needs your decision.",
-      "5": "<b>Sound.</b> Team radio comes with the broadcast \"bip\" and is read aloud; engines, passes, pit stops and the Safety Car have their own sounds. The 🔊 and 🎙 buttons at the top turn sound and the radio voice on or off."
+      "5": "<b>Sound.</b> Team radio comes with the broadcast \"bip\" and is read aloud; passes, pit stops, the Safety Car and the flag have their own short sounds. The 🔊 and 🎙 buttons at the top turn sound and the radio voice on or off."
     },
     "card": {
       "title": "Your driver card",

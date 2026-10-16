@@ -249,10 +249,6 @@ export function RaceView({ setup }: { setup: RaceSetup }) {
     }
     if (Object.keys(next).join() !== Object.keys(flashes).join())
       setFlashes(next);
-    sound.setAmbience({
-      running: started && !runner.paused && !race.finished,
-      neutralised: race.trackStatus !== "green",
-    });
   });
   useEffect(() => runner.onEvents((events) => onRaceEvents(events)), [runner]);
 

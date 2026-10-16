@@ -16,13 +16,11 @@ const CUE_GAP = 0.6;
 /** At most this many radio messages wait to be read out; older ones are dropped. */
 const VOICE_QUEUE = 2;
 
-type Ambience = { running: boolean; neutralised: boolean };
-
 /**
  * All game audio, synthesised with the Web Audio API: no recordings. Team radio gets the
- * broadcast-style "bip" before and after, a band-limited crackle while it plays and (optionally)
- * the message read by the speech synthesiser; the race gets a low engine drone with gear shifts
- * and the odd fly-by, plus short effects for passes, stops, the Safety Car and the flag.
+ * broadcast-style "bip" before and after and (optionally) the message read by the speech
+ * synthesiser; the race gets short effects for the start, passes, stops, the Safety Car and the
+ * flag. No engine noise and no static under the radio: both were too tiring to listen to.
  *
  * Browsers only start audio after a user gesture, so call `unlock()` from a click or key press.
  */
@@ -30,11 +28,8 @@ export class SoundBoard {
   private ctx: AudioContext | null = null;
   private master: GainNode | null = null;
   private noise: AudioBuffer | null = null;
-  private drone: { gain: GainNode; filter: BiquadFilterNode } | null = null;
-  private flyByTimer: ReturnType<typeof setTimeout> | null = null;
   private lastCue = new Map<string, number>();
   private settings: SoundSettings = DEFAULT_SOUND;
-  private ambience: Ambience = { running: false, neutralised: false };
   private voices = 0;
   private lang = "en-GB";
 
@@ -52,10 +47,8 @@ export class SoundBoard {
       this.master.gain.value = MASTER_VOLUME;
       this.master.connect(this.ctx.destination);
       this.noise = this.makeNoise();
-      this.startDrone();
     }
     if (this.ctx.state === "suspended") void this.ctx.resume();
-    this.applyAmbience();
   }
 
   configure(settings: SoundSettings, lang: string): void {
@@ -65,18 +58,6 @@ export class SoundBoard {
     if (!this.ctx) return;
     if (settings.enabled && this.ctx.state === "suspended")
       void this.ctx.resume();
-    this.applyAmbience();
-  }
-
-  /** Engine noise follows the race: off when paused or over, quieter behind the Safety Car. */
-  setAmbience(ambience: Ambience): void {
-    if (
-      ambience.running === this.ambience.running &&
-      ambience.neutralised === this.ambience.neutralised
-    )
-      return;
-    this.ambience = ambience;
-    this.applyAmbience();
   }
 
   play(cue: Cue): void {
@@ -85,10 +66,10 @@ export class SoundBoard {
     const t = ctx.currentTime + 0.01;
     switch (cue) {
       case "lightsOut":
-        // Five red lights, then the roar.
+        // Five red lights, then lights out.
         for (let i = 0; i < 5; i++)
           this.tone(t + i * 0.18, 0.09, 520, "square", 0.08);
-        this.roar(t + 1.0);
+        this.tone(t + 1.0, 0.25, 1040, "square", 0.08);
         break;
       case "overtakeGain":
         this.whoosh(t, 400, 2600, 0.5);
@@ -121,7 +102,9 @@ export class SoundBoard {
         this.whoosh(t + 0.05, 800, 4000, 0.35, 0.12);
         break;
       case "rain":
-        this.hiss(t, 2.5, 1400, 0.1);
+        [784, 659].forEach((f, i) =>
+          this.tone(t + i * 0.18, 0.2, f, "sine", 0.08),
+        );
         break;
       case "fastestLap":
         [1046, 1318].forEach((f, i) =>
@@ -149,8 +132,8 @@ export class SoundBoard {
   }
 
   /**
-   * Team radio: the broadcast "bip", crackle while the message plays, and the closing "bip".
-   * With voice on, the message is read out and the crackle lasts until it ends.
+   * Team radio: the broadcast "bip", the message (read out when voice is on), and the closing
+   * "bip".
    */
   radio(text: string, from: "driver" | "engineer"): void {
     const ctx = this.ready();
@@ -164,10 +147,7 @@ export class SoundBoard {
       "speechSynthesis" in window &&
       this.voices < VOICE_QUEUE;
     if (!speak) {
-      const length = Math.min(2.4, 0.6 + text.length * 0.02);
-      const crackle = this.crackle(t + 0.15, length);
-      crackle.stop(t + 0.15 + length);
-      this.radioBip(t + 0.2 + length, false);
+      this.radioBip(t + Math.min(2.2, 0.5 + text.length * 0.02), false);
       return;
     }
 
@@ -180,17 +160,10 @@ export class SoundBoard {
     utterance.rate = from === "driver" ? 1.15 : 1.05;
     utterance.pitch = from === "driver" ? 1.05 : 0.9;
     utterance.volume = 0.9;
-    const crackle = this.crackle(t + 0.15, 30);
     this.voices++;
     const done = () => {
       this.voices = Math.max(0, this.voices - 1);
-      const now = this.ctx?.currentTime ?? 0;
-      try {
-        crackle.stop(now + 0.05);
-      } catch {
-        // already stopped
-      }
-      if (this.ctx) this.radioBip(now + 0.08, false);
+      if (this.ctx) this.radioBip(this.ctx.currentTime + 0.08, false);
     };
     utterance.onend = done;
     utterance.onerror = done;
@@ -200,12 +173,9 @@ export class SoundBoard {
 
   dispose(): void {
     this.stopVoice();
-    if (this.flyByTimer) clearTimeout(this.flyByTimer);
-    this.flyByTimer = null;
     void this.ctx?.close();
     this.ctx = null;
     this.master = null;
-    this.drone = null;
   }
 
   // ------------------------------------------------------------------ internals
@@ -310,14 +280,6 @@ export class SoundBoard {
     filter.connect(this.envelope(start, duration, peak, duration * 0.4));
   }
 
-  private hiss(start: number, duration: number, cutoff: number, peak: number) {
-    const filter = this.ctx!.createBiquadFilter();
-    filter.type = "lowpass";
-    filter.frequency.value = cutoff;
-    this.noiseSource(start, duration).connect(filter);
-    filter.connect(this.envelope(start, duration, peak, duration * 0.4));
-  }
-
   /** A pneumatic wheel gun: a short, rattling burst of noise. */
   private wheelGun(start: number) {
     const ctx = this.ctx!;
@@ -343,129 +305,5 @@ export class SoundBoard {
     const [a, b] = opening ? [1450, 1950] : [1950, 1450];
     this.tone(start, 0.05, a, "square", 0.05);
     this.tone(start + 0.06, 0.07, b, "square", 0.05);
-  }
-
-  /** Band-limited static under a radio message; returns the source so it can be stopped. */
-  private crackle(start: number, maxDuration: number): AudioBufferSourceNode {
-    const ctx = this.ctx!;
-    const source = ctx.createBufferSource();
-    source.buffer = this.noise;
-    source.loop = true;
-    const band = ctx.createBiquadFilter();
-    band.type = "bandpass";
-    band.frequency.value = 2200;
-    band.Q.value = 0.9;
-    const gain = ctx.createGain();
-    gain.gain.setValueAtTime(0.0001, start);
-    gain.gain.exponentialRampToValueAtTime(0.03, start + 0.05);
-    // A slow flutter, like a signal fading in and out.
-    const flutter = ctx.createOscillator();
-    flutter.frequency.value = 7;
-    const depth = ctx.createGain();
-    depth.gain.value = 0.012;
-    flutter.connect(depth).connect(gain.gain);
-    source.connect(band).connect(gain).connect(this.master!);
-    source.start(start, Math.random());
-    flutter.start(start);
-    source.addEventListener("ended", () => {
-      flutter.stop();
-      gain.disconnect();
-    });
-    source.stop(start + maxDuration);
-    return source;
-  }
-
-  /** The start: a rising roar as the field launches. */
-  private roar(start: number) {
-    this.sweep(start, 2.2, 90, 420, "sawtooth", 0.09);
-    this.sweep(start + 0.05, 2.2, 135, 630, "sawtooth", 0.05);
-    this.whoosh(start, 300, 1500, 2.4, 0.12);
-  }
-
-  /**
-   * The engine drone: a few detuned sawtooth "cars" through a low-pass filter, with a sawtooth
-   * LFO on the pitch for the rise-and-drop of upshifts.
-   */
-  private startDrone() {
-    const ctx = this.ctx!;
-    const filter = ctx.createBiquadFilter();
-    filter.type = "lowpass";
-    filter.frequency.value = 700;
-    const gain = ctx.createGain();
-    gain.gain.value = 0;
-    filter.connect(gain).connect(this.master!);
-    const shifts = ctx.createOscillator();
-    shifts.type = "sawtooth";
-    shifts.frequency.value = 0.8;
-    for (const [frequency, rate] of [
-      [110, 0.8],
-      [148, 0.63],
-      [196, 0.93],
-    ]) {
-      const osc = ctx.createOscillator();
-      osc.type = "sawtooth";
-      osc.frequency.value = frequency;
-      const lfo = ctx.createOscillator();
-      lfo.type = "sawtooth";
-      lfo.frequency.value = rate;
-      const depth = ctx.createGain();
-      depth.gain.value = frequency * 0.25;
-      lfo.connect(depth).connect(osc.frequency);
-      osc.connect(filter);
-      osc.start();
-      lfo.start();
-    }
-    this.drone = { gain, filter };
-  }
-
-  private applyAmbience() {
-    const ctx = this.ctx;
-    if (!ctx || !this.drone) return;
-    const on = this.settings.enabled && this.ambience.running;
-    const level = on ? (this.ambience.neutralised ? 0.035 : 0.07) : 0;
-    this.drone.gain.gain.setTargetAtTime(level, ctx.currentTime, 0.4);
-    this.drone.filter.frequency.setTargetAtTime(
-      this.ambience.neutralised ? 450 : 750,
-      ctx.currentTime,
-      0.5,
-    );
-    if (on && !this.flyByTimer) this.scheduleFlyBy();
-    if (!on && this.flyByTimer) {
-      clearTimeout(this.flyByTimer);
-      this.flyByTimer = null;
-    }
-  }
-
-  /** Every few seconds a car screams past: pitch drops and the sound pans across. */
-  private scheduleFlyBy() {
-    const delay = 2500 + Math.random() * 5000;
-    this.flyByTimer = setTimeout(() => {
-      this.flyByTimer = null;
-      const ctx = this.ready();
-      if (!ctx || !this.ambience.running) return;
-      if (!this.ambience.neutralised) {
-        const t = ctx.currentTime + 0.01;
-        const osc = ctx.createOscillator();
-        osc.type = "sawtooth";
-        const base = 300 + Math.random() * 120;
-        osc.frequency.setValueAtTime(base * 1.25, t);
-        osc.frequency.exponentialRampToValueAtTime(base * 0.75, t + 1.3);
-        const filter = ctx.createBiquadFilter();
-        filter.type = "lowpass";
-        filter.frequency.value = 1600;
-        const pan = ctx.createStereoPanner();
-        const side = Math.random() < 0.5 ? -1 : 1;
-        pan.pan.setValueAtTime(-side * 0.8, t);
-        pan.pan.linearRampToValueAtTime(side * 0.8, t + 1.3);
-        const gain = ctx.createGain();
-        gain.gain.setValueAtTime(0.0001, t);
-        gain.gain.exponentialRampToValueAtTime(0.06, t + 0.55);
-        gain.gain.exponentialRampToValueAtTime(0.0001, t + 1.4);
-        osc.connect(filter).connect(pan).connect(gain).connect(this.master!);
-        osc.start(t);
-        osc.stop(t + 1.5);
-      }
-      this.scheduleFlyBy();
-    }, delay);
   }
 }
