@@ -1,0 +1,8 @@
+.next
+node_modules
+package-lock.json
+src/data/**/*.json
+.agents
+.claude
+skills-lock.json
+PLAN.md
