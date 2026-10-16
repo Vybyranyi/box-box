@@ -2,6 +2,8 @@
 
 A browser race-strategy game set in the 2026 season. Pick a team, run both cars from the pit wall and make the calls: pit windows, tyres, pace and team orders.
 
+**Play: [box-box-tau.vercel.app](https://box-box-tau.vercel.app)**
+
 Fan-made, non-commercial, and not affiliated with Formula 1 or any team.
 
 ## Development

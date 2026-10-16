@@ -23,7 +23,7 @@ Driver headshots, team logos and car renders come from the formula1.com CDN, and
 - Next.js (App Router), TypeScript strict, Tailwind, shadcn/ui
 - Vitest, ESLint, Prettier, npm
 - No backend or database in the MVP. Future server code goes in Next Route Handlers (Node runtime) with Neon Postgres + Drizzle; no Express.
-- Deployed to Vercel via GitHub integration.
+- Deployed to Vercel via GitHub integration: every push to `main` goes to production at https://box-box-tau.vercel.app (project `box-box`, team "Marian's projects"). The Vercel MCP connection here has read-only access; project settings changes go through the dashboard.
 
 ## Structure
 
