@@ -83,7 +83,7 @@ export default async function HowToPlayPage() {
 
       <Section number={3} title={t("card.title")}>
         <ul className="flex flex-col gap-2">
-          {items("card", 5).map((item, i) => (
+          {items("card", 6).map((item, i) => (
             <li key={i}>{item}</li>
           ))}
         </ul>
@@ -91,7 +91,7 @@ export default async function HowToPlayPage() {
 
       <Section number={4} title={t("decisions.title")}>
         <ul className="flex flex-col gap-3">
-          {items("decisions", 6).map((item, i) => (
+          {items("decisions", 7).map((item, i) => (
             <li key={i}>{item}</li>
           ))}
         </ul>

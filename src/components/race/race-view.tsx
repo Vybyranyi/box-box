@@ -17,6 +17,7 @@ import { useTranslations } from "next-intl";
 import { describeEvent, ENGINEER, type FeedItem } from "@/game/event-text";
 import { msg, tyresPlural, type Msg } from "@/game/messages";
 import { recommendedCompound } from "@/game/pit-wall";
+import { boxCalls } from "@/game/insights";
 import { radioFor } from "@/game/radio";
 import { RaceRunner, SPEEDS, type Speed } from "@/game/race-runner";
 import { buildTower } from "@/game/tower";
@@ -113,15 +114,30 @@ export function RaceView({ setup }: { setup: RaceSetup }) {
   const pendingFeed = useRef<FeedItem[]>([]);
   const pendingAlert = useRef<RaceAlert | null>(null);
   const localMessageId = useRef(-1);
+  const boxCallsMade = useRef(new Set<string>());
 
   const drawRef = useRef<(() => void) | null>(null);
   const register = useCallback((draw: (() => void) | null) => {
     drawRef.current = draw;
   }, []);
 
+  /** A radio message from our race engineer that the engine didn't produce. */
+  const engineerRadio = (message: Msg): FeedItem => ({
+    id: localMessageId.current--,
+    lap: Math.min(race.leaderLap + 1, race.laps),
+    message,
+    tone: "info",
+    kind: "radio",
+    from: ENGINEER,
+    color: teamId ? teams.find((x) => x.id === teamId)?.color : undefined,
+  });
+
   // Engine events → feed, radio and (optionally) an auto-pause decision prompt.
   const onRaceEvents = useEffectEvent((events: TimedEvent[]) => {
     pendingFeed.current.push(...feedItems(race, events, teamId));
+    if (teamId)
+      for (const call of boxCalls(race, teamId, boxCallsMade.current))
+        pendingFeed.current.push(engineerRadio(call));
     if (!autoPause) return;
     for (const event of events) {
       const next = alertFor(race, event, teamId);
@@ -215,18 +231,7 @@ export function RaceView({ setup }: { setup: RaceSetup }) {
   };
 
   const pushLocalRadio = (message: Msg) => {
-    const color = teamId
-      ? teams.find((x) => x.id === teamId)?.color
-      : undefined;
-    const item: FeedItem = {
-      id: localMessageId.current--,
-      lap: Math.min(race.leaderLap + 1, race.laps),
-      message,
-      tone: "info",
-      kind: "radio",
-      from: ENGINEER,
-      color,
-    };
+    const item = engineerRadio(message);
     setFeed((f) => [item, ...f].slice(0, FEED_LENGTH));
   };
 
@@ -257,6 +262,7 @@ export function RaceView({ setup }: { setup: RaceSetup }) {
     const next = createRunner(setup, tyres);
     next.setSpeed(speed);
     pendingFeed.current = [];
+    boxCallsMade.current.clear();
     setFeed(feedItems(next.race, next.race.events, teamId).reverse());
     setRunner(next);
     setStarted(true);

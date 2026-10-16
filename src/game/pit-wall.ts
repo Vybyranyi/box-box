@@ -83,6 +83,8 @@ export function planSummary(race: Race, car: CarState): Msg {
         : "advice.noMoreStops",
     );
   const lap = plan.stints[0].endLap;
+  if (lap <= car.lap + 1 && !car.pitRequest)
+    return msg("advice.boxNow", { next: tyresPlural(next.compound) });
   const then = plan.stints[2];
   return then
     ? msg("advice.planThen", {

@@ -16,7 +16,7 @@ export const MAX_PLANNED_WEAR = 80;
 /** Average stationary time, used for planning. */
 export const PLANNED_STATIONARY = 2.4;
 
-type PlanInput = {
+export type PlanInput = {
   /** First lap of the plan (laps completed so far). */
   fromLap: number;
   totalLaps: number;
@@ -28,8 +28,11 @@ type PlanInput = {
   requireTwoCompounds: boolean;
   /** Compounds already used this race. */
   usedCompounds: Compound[];
-  /** Tyre currently fitted, if the plan continues an ongoing stint rather than starting fresh. */
-  current?: { compound: DryCompound; wear: number };
+  /**
+   * Tyre currently fitted, if the plan continues an ongoing stint rather than starting fresh.
+   * `rate` overrides the wear rate for this stint (e.g. the car is pushing or conserving).
+   */
+  current?: { compound: DryCompound; wear: number; rate?: number };
   /** Picks among near-optimal plans at random; without it, the best plan is returned. */
   rng?: Rng;
 };
@@ -75,13 +78,15 @@ export function planStrategy(input: PlanInput): StrategyPlan {
           : stintCost(c, n, rate, 0, ref) + OUT_LAP_PENALTY[c];
     }
   }
+  // The tyre already fitted can always do the lap in progress (boxing at its end); past that it
+  // gets the same wear limit as a fresh set, so the planned stop doesn't drift later lap by lap.
   const currentCost: number[] = [0];
   if (input.current) {
     const { compound, wear } = input.current;
-    const rate = wearRates[compound];
+    const rate = input.current.rate ?? wearRates[compound];
     for (let n = 1; n <= remaining; n++) {
       currentCost[n] =
-        wear + n * rate > MAX_PLANNED_WEAR + 8
+        n > 1 && wear + n * rate > MAX_PLANNED_WEAR
           ? Infinity
           : stintCost(compound, n, rate, wear, ref);
     }
@@ -102,6 +107,8 @@ export function planStrategy(input: PlanInput): StrategyPlan {
 
   const candidates: Candidate[] = [];
   const minStint = Math.min(5, Math.max(1, Math.floor(remaining / 4)));
+  // An ongoing stint can end on the lap in progress; only fresh stints need a minimum length.
+  const minFirst = input.current ? 1 : minStint;
 
   for (const first of firstOptions) {
     // No more stops.
@@ -115,7 +122,7 @@ export function planStrategy(input: PlanInput): StrategyPlan {
       // One more stop.
       if (satisfiesRule([first.compound, second])) {
         let best: Candidate | null = null;
-        for (let a = minStint; a <= remaining - minStint; a++) {
+        for (let a = minFirst; a <= remaining - minStint; a++) {
           const time = first.costs[a] + cost[second][remaining - a] + stopCost;
           if (time < (best?.time ?? Infinity)) {
             best = {
@@ -133,7 +140,7 @@ export function planStrategy(input: PlanInput): StrategyPlan {
       for (const third of DRY_COMPOUNDS) {
         if (!satisfiesRule([first.compound, second, third])) continue;
         let best: Candidate | null = null;
-        for (let a = minStint; a <= remaining - 2 * minStint; a++) {
+        for (let a = minFirst; a <= remaining - 2 * minStint; a++) {
           if (first.costs[a] === Infinity) continue;
           for (let b = minStint; a + b <= remaining - minStint; b++) {
             const time =

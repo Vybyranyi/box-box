@@ -2,6 +2,7 @@ import { drivers, getTrack, teams, tracks } from "@/data";
 import { createRace } from "@/engine";
 import { describe, expect, it } from "vitest";
 import { alertFor } from "./alerts";
+import { boxCalls, carInsights, pitWindow } from "./insights";
 import { describeEvent } from "./event-text";
 import type { Msg } from "./messages";
 import { gradeRace, teamObjective } from "./objective";
@@ -53,6 +54,7 @@ describe("translations", () => {
       });
       for (const car of race.cars.filter((c) => c.isPlayer))
         produced.push(suggestedStart(race, car).summary);
+      const said = new Set<string>();
       while (!race.finished) {
         for (const event of race.step()) {
           const control = describeEvent(race, event);
@@ -65,6 +67,18 @@ describe("translations", () => {
         if (race.tick % 200 === 0)
           for (const car of race.cars.filter((c) => c.isPlayer))
             produced.push(planSummary(race, car));
+        if (race.tick % 20 === 0) {
+          produced.push(...boxCalls(race, "mclaren", said));
+          for (const car of race.cars) {
+            for (const insight of carInsights(race, car))
+              produced.push(
+                insight.message,
+                ...(insight.tip ? [insight.tip] : []),
+              );
+            const window = pitWindow(race, car);
+            if (window) produced.push(window.message);
+          }
+        }
       }
       const report = gradeRace(race, "mclaren");
       produced.push(
@@ -77,6 +91,9 @@ describe("translations", () => {
 
     const keys = new Set(produced.map((m) => m.key));
     expect(keys.size).toBeGreaterThan(30);
+    expect(
+      [...keys].filter((k) => k.startsWith("insight.")).length,
+    ).toBeGreaterThan(8);
     for (const message of produced) {
       for (const locale of ["en", "uk"] as const) {
         const text = tr(message, locale);

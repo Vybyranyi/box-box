@@ -79,6 +79,11 @@ export function expectedLapTime(i: LapInputs): number {
   );
 }
 
+/** Standard deviation of a driver's lap-to-lap variation, in seconds. */
+export function lapNoiseSigma(driver: Driver, wetness: number): number {
+  return (0.12 + (100 - driver.ratings.consistency) * 0.012) * (1 + wetness);
+}
+
 /** Lap-to-lap variation and the odd mistake, driven by the driver's consistency. */
 export function lapNoise(
   driver: Driver,
@@ -86,8 +91,7 @@ export function lapNoise(
   rng: Rng,
 ): { noise: number; mistake: boolean } {
   const consistency = driver.ratings.consistency;
-  const sigma = (0.12 + (100 - consistency) * 0.012) * (1 + wetness);
-  let noise = rng.normal(0, sigma);
+  let noise = rng.normal(0, lapNoiseSigma(driver, wetness));
   const mistakeChance = (0.01 + (100 - consistency) * 0.0015) * (1 + wetness);
   const mistake = rng.chance(mistakeChance);
   if (mistake) noise += rng.range(0.8, 3);

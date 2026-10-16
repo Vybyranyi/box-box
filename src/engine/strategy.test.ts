@@ -7,6 +7,7 @@ import {
   MAX_PLANNED_WEAR,
   planStrategy,
   type PitDecisionInput,
+  type PlanInput,
   type WearRates,
 } from "./strategy";
 import { DRY_COMPOUNDS, wearPerLap } from "./tyres";
@@ -178,5 +179,51 @@ describe("decidePit", () => {
         nextStopLap: null,
       }),
     ).toMatchObject({ pit: true, reason: "rule" });
+  });
+});
+
+describe("planStrategy mid-stint", () => {
+  const track = getTrack("silverstone");
+  const rates = ratesFor("silverstone");
+  const midStint = (fromLap: number, current: PlanInput["current"]) =>
+    planStrategy({
+      fromLap,
+      totalLaps: track.laps,
+      wearRates: rates,
+      referenceLap: referenceLap(track),
+      pitLaneLoss: track.pitLaneLossSeconds,
+      overtakingDifficulty: track.overtakingDifficulty,
+      requireTwoCompounds: true,
+      usedCompounds: current ? [current.compound] : [],
+      current,
+    });
+
+  it("keeps the planned stop lap steady as the stint goes on", () => {
+    const initial = midStint(0, undefined);
+    const { compound, endLap } = initial.stints[0];
+    for (let lap = 1; lap < endLap; lap++) {
+      const plan = midStint(lap, { compound, wear: lap * rates[compound] });
+      expect(plan.stints[0].endLap, `lap ${lap}`).toBeLessThanOrEqual(
+        endLap + 1,
+      );
+    }
+  });
+
+  it("calls for a stop straight away on worn tyres instead of running to the end", () => {
+    for (const wear of [76, 85, 110]) {
+      const plan = midStint(20, { compound: "medium", wear });
+      expect(plan.stints.length, `wear ${wear}`).toBeGreaterThan(1);
+      expect(plan.stints[0].endLap, `wear ${wear}`).toBeLessThanOrEqual(22);
+    }
+  });
+
+  it("plans an earlier stop when the car is pushing", () => {
+    const balanced = midStint(10, { compound: "medium", wear: 30 });
+    const pushing = midStint(10, {
+      compound: "medium",
+      wear: 30,
+      rate: rates.medium * 1.35,
+    });
+    expect(pushing.stints[0].endLap).toBeLessThan(balanced.stints[0].endLap);
   });
 });

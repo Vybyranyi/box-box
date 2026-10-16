@@ -176,6 +176,28 @@ export type RaceEvent =
 /** An event with when it happened; `seq` is its index in `race.events`. */
 export type TimedEvent = { seq: number; time: number; lap: number } & RaceEvent;
 
+/** Where a car would rejoin if it boxed at the end of the lap in progress. */
+export type PitRejoin = {
+  position: number;
+  /** Time the stop costs: pit lane plus an average stationary time. */
+  lossSeconds: number;
+  /** Nearest cars around the rejoin point, with gaps in seconds at racing speed. */
+  ahead: { car: number; gap: number } | null;
+  behind: { car: number; gap: number } | null;
+};
+
+/** A car close behind the car ahead in the race order, under green flags. */
+export type Battle = {
+  ahead: number;
+  gap: number;
+  /** Expected pace advantage over the car ahead in s/lap, without noise (positive = faster). */
+  paceDelta: number;
+  /** Lap time lost in dirty air at attacking distance: the pace needed just to get close. */
+  dirtyAir: number;
+  /** Estimated chance of passing on a given lap, 0..1. */
+  passChance: number;
+};
+
 export type RaceCommand =
   | { type: "pit"; driverId: string; compound: Compound }
   | { type: "cancel-pit"; driverId: string }

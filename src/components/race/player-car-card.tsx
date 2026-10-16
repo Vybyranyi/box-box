@@ -3,6 +3,7 @@
 import { DriverPortrait } from "@/components/driver-portrait";
 import { Button } from "@/components/ui/button";
 import type { CarState, Compound, PaceMode, Race, RaceCommand } from "@/engine";
+import { boxNow, carInsights, pitWindow, type Insight } from "@/game/insights";
 import {
   estimatedWear,
   lapsLeftOnTyre,
@@ -19,6 +20,17 @@ import { TYRE_COLORS, TyreBadge } from "./tyre-badge";
 
 const COMPOUNDS: Compound[] = ["soft", "medium", "hard", "intermediate", "wet"];
 const PACE: PaceMode[] = ["push", "balanced", "conserve"];
+
+const TONE_TEXT: Record<Insight["tone"], string> = {
+  good: "text-emerald-300",
+  warn: "text-amber-200",
+  info: "text-muted-foreground",
+};
+const TONE_BORDER: Record<Insight["tone"], string> = {
+  good: "border-emerald-400",
+  warn: "border-amber-400",
+  info: "border-muted-foreground/40",
+};
 
 export function PlayerCarCard({
   race,
@@ -47,6 +59,9 @@ export function PlayerCarCard({
   const lapsLeft = lapsLeftOnTyre(race, car);
   const lastLaps = car.lapTimes.slice(-3).reverse();
   const mustSwitch = needsSecondCompound(race, car);
+  const boxing = boxNow(race, car);
+  const insights = active ? carInsights(race, car) : [];
+  const rejoin = car.pitRequest ? null : pitWindow(race, car);
 
   return (
     <section
@@ -207,7 +222,11 @@ export function PlayerCarCard({
               </div>
               <Button
                 size="sm"
-                className="ml-auto font-bold"
+                className={cn(
+                  "ml-auto font-bold",
+                  boxing &&
+                    "animate-pulse bg-emerald-500 text-white ring-2 ring-emerald-300 hover:bg-emerald-500",
+                )}
                 onClick={(e) => {
                   e.stopPropagation();
                   onCommand({
@@ -221,13 +240,35 @@ export function PlayerCarCard({
               </Button>
             </div>
           )}
+          {rejoin && (
+            <p className={cn("font-mono text-[11px]", TONE_TEXT[rejoin.tone])}>
+              {translate(rejoin.message)}
+            </p>
+          )}
         </>
       )}
+
+      {insights.map((insight) => (
+        <div
+          key={insight.message.key}
+          className={cn(
+            "border-l-2 pl-2 text-[11px] leading-snug",
+            TONE_TEXT[insight.tone],
+            TONE_BORDER[insight.tone],
+          )}
+        >
+          <p>{translate(insight.message)}</p>
+          {insight.tip && (
+            <p className="text-muted-foreground">→ {translate(insight.tip)}</p>
+          )}
+        </div>
+      ))}
 
       <p
         className={cn(
           "text-[11px] text-muted-foreground",
           mustSwitch && race.laps - car.lap < 15 && "text-amber-300",
+          boxing && "font-bold text-emerald-300",
         )}
       >
         {translate(planSummary(race, car))}

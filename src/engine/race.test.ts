@@ -174,3 +174,86 @@ describe("race", () => {
     expect(deployments).toBeGreaterThan(10);
   });
 });
+
+describe("pit wall estimates", () => {
+  const silverstone = getTrack("silverstone");
+
+  it("predicts where a car rejoins after a stop", () => {
+    let stops = 0;
+    let close = 0;
+    for (let seed = 1; seed <= 4; seed++) {
+      const race = createRace({ ...base, seed, track: silverstone });
+      let predicted = race.cars.map((c) => race.pitRejoin(c));
+      const pending = new Map<number, number>();
+      while (!race.finished) {
+        for (const e of race.step()) {
+          if (e.type === "pit-entry" && predicted[e.car])
+            pending.set(e.car, predicted[e.car]!.position);
+          if (e.type === "pit-exit" && pending.has(e.car)) {
+            stops++;
+            const error = race.cars[e.car].position - pending.get(e.car)!;
+            if (Math.abs(error) <= 2) close++;
+            pending.delete(e.car);
+          }
+        }
+        predicted = race.cars.map((c) => race.pitRejoin(c));
+      }
+    }
+    expect(stops).toBeGreaterThan(50);
+    expect(close / stops).toBeGreaterThan(0.8);
+  });
+
+  it("costs less track position under the Safety Car", () => {
+    const race = createRace({ ...base, seed: 3, track: silverstone });
+    runUntil(race, () => race.leaderLap >= 10);
+    const car = race.cars[race.order[10]];
+    const green = race.pitRejoin(car)!;
+    expect(green.position).toBeGreaterThan(car.position);
+    expect(green.lossSeconds).toBeGreaterThan(silverstone.pitLaneLossSeconds);
+    for (const c of race.cars) if (c.status === "racing") c.speed *= 0.5;
+    expect(race.pitRejoin(car)!.position).toBeLessThan(green.position);
+  });
+
+  it("gives a pass chance per lap that matches how often passes happen", () => {
+    const likely = { predicted: 0, passed: 0, n: 0 };
+    const unlikely = { predicted: 0, passed: 0, n: 0 };
+    for (let seed = 1; seed <= 4; seed++) {
+      const race = createRace({ ...base, seed, track: silverstone });
+      let lap = -1;
+      let open: { car: number; ahead: number; chance: number }[] = [];
+      while (!race.finished) {
+        race.step();
+        if (race.leaderLap === lap) continue;
+        lap = race.leaderLap;
+        for (const b of open) {
+          const group = b.chance >= 0.1 ? likely : unlikely;
+          group.n++;
+          group.predicted += b.chance;
+          if (race.cars[b.car].position < race.cars[b.ahead].position)
+            group.passed++;
+        }
+        open = [];
+        if (lap < 2) continue;
+        for (const car of race.cars) {
+          const battle = race.battle(car);
+          if (!battle || battle.gap > 1) continue;
+          expect(battle.paceDelta).toBeCloseTo(
+            race.expectedLap(race.cars[battle.ahead]) - race.expectedLap(car),
+          );
+          open.push({ car: car.index, ...battle, chance: battle.passChance });
+        }
+      }
+    }
+    expect(likely.n).toBeGreaterThan(100);
+    const observed = likely.passed / likely.n;
+    expect(observed).toBeGreaterThan(unlikely.passed / unlikely.n);
+    expect(Math.abs(observed - likely.predicted / likely.n)).toBeLessThan(0.1);
+  });
+
+  it("only reports battles under green flags", () => {
+    const race = createRace({ ...base, seed: 3, track: silverstone });
+    runUntil(race, () => race.cars.some((c) => race.battle(c)));
+    expect(race.trackStatus).toBe("green");
+    expect(race.battle(race.cars[race.order[0]])).toBeNull();
+  });
+});

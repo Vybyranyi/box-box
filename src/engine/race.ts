@@ -3,8 +3,10 @@ import {
   expectedLapTime,
   FULL_RACE_FUEL_KG,
   lapNoise,
+  lapNoiseSigma,
   PACE_MODE,
   referenceLap,
+  type LapInputs,
 } from "./pace";
 import { simulateQualifying } from "./qualifying";
 import { createRng, type Rng } from "./rng";
@@ -12,6 +14,7 @@ import {
   decidePit,
   jitterStopLap,
   planStrategy,
+  PLANNED_STATIONARY,
   type WearRates,
 } from "./strategy";
 import {
@@ -22,10 +25,13 @@ import {
   wearPerLap,
 } from "./tyres";
 import type {
+  Battle,
   CarState,
   ClassifiedResult,
   Compound,
   DryCompound,
+  PaceMode,
+  PitRejoin,
   QualifyingResult,
   RaceCommand,
   RaceConfig,
@@ -47,6 +53,10 @@ const POINTS = [25, 18, 15, 12, 10, 8, 6, 4, 2, 1];
 
 /** Per-lap chance of an overtake with a 1 s/lap pace advantage, by overtaking difficulty 1..5. */
 const OVERTAKE_BASE = [0.6, 0.4, 0.25, 0.12, 0.04];
+/** Lap time lost following right behind another car (scaled down linearly to 0 at a 1 s gap). */
+const DIRTY_AIR = 0.35;
+/** Gap at which a faster car is close enough to attempt a pass, in seconds. */
+const ATTACK_GAP = 0.3;
 /** Chance a crash brings out the SC / VSC; the rest are cleared under yellows. */
 const CRASH_SC = 0.5;
 const CRASH_VSC = 0.3;
@@ -55,6 +65,16 @@ const MECHANICAL_VSC = 0.3;
 const CRASH_CALIBRATION = 1.4;
 /** Spread of each car's pace from weekend to weekend, in % of lap time. */
 const WEEKEND_FORM_SIGMA = 0.22;
+
+/** Gauss-Hermite nodes and weights for averaging over a standard normal distribution. */
+const GAUSS_HERMITE: [number, number][] = [
+  [-3.3243, 0.00256],
+  [-1.8892, 0.08861],
+  [-0.6167, 0.40883],
+  [0.6167, 0.40883],
+  [1.8892, 0.08861],
+  [3.3243, 0.00256],
+];
 
 export type Phase = "racing" | "finishing" | "finished";
 
@@ -280,9 +300,14 @@ export class Race {
    * it plans the whole race including the starting tyre (before the start).
    */
   suggestStrategy(car: CarState, fromScratch = false): StrategyPlan {
+    // The current stint wears at the car's actual pace mode, not the balanced planning rate.
     const current =
       !fromScratch && isDry(car.tyre.compound)
-        ? { compound: car.tyre.compound, wear: car.tyre.wear }
+        ? {
+            compound: car.tyre.compound,
+            wear: car.tyre.wear,
+            rate: this.wearRate(car),
+          }
         : undefined;
     return planStrategy({
       fromLap: car.lap,
@@ -295,6 +320,102 @@ export class Race {
       usedCompounds: fromScratch ? [] : car.usedCompounds,
       current,
     });
+  }
+
+  /** Expected lap time for this car in the current conditions, without noise or traffic. */
+  expectedLap(car: CarState, overrides: Partial<LapInputs> = {}): number {
+    return expectedLapTime({
+      track: this.track,
+      team: this.teamOf[car.index],
+      driver: this.driverOf[car.index],
+      compound: car.tyre.compound,
+      wear: car.tyre.wear,
+      fuelKg: car.fuelKg,
+      wetness: this.weather.wetness,
+      paceMode: car.paceMode,
+      outLap: car.outLap,
+      ...overrides,
+    });
+  }
+
+  /**
+   * Where the car would rejoin if it boxed at the end of this lap, assuming nobody else stops.
+   * Under a Safety Car the field moves slower, so the same stop costs less track.
+   */
+  pitRejoin(car: CarState): PitRejoin | null {
+    if (car.status !== "racing") return null;
+    const speeds = this.cars
+      .filter((c) => c.status === "racing" && c.speed > 0)
+      .map((c) => c.speed)
+      .sort((a, b) => a - b);
+    const racingSpeed = this.lapLength / this.expectedLap(car);
+    const fieldSpeed = speeds.length
+      ? speeds[Math.floor(speeds.length / 2)]
+      : racingSpeed;
+    const lossSeconds = this.track.pitLaneLossSeconds + PLANNED_STATIONARY;
+    const rejoin = this.raceDistance(car) - lossSeconds * fieldSpeed;
+
+    let position = 1;
+    let ahead: PitRejoin["ahead"] = null;
+    let behind: PitRejoin["behind"] = null;
+    for (const other of this.cars) {
+      if (other === car || other.status === "retired") continue;
+      const distance =
+        this.raceDistance(other) -
+        (other.status === "pit" ? other.pitTimeLeft * fieldSpeed : 0);
+      const gap = Math.abs(distance - rejoin) / racingSpeed;
+      if (distance > rejoin) {
+        position++;
+        if (!ahead || gap < ahead.gap) ahead = { car: other.index, gap };
+      } else if (!behind || gap < behind.gap) {
+        behind = { car: other.index, gap };
+      }
+    }
+    return { position, lossSeconds, ahead, behind };
+  }
+
+  /**
+   * The fight with the car ahead in the race order, if it is within 1.5 s under green flags:
+   * the pace advantage, the dirty-air penalty to overcome, and the chance of passing per lap.
+   * `paceMode` asks "what if this car switched to that mode".
+   */
+  battle(car: CarState, paceMode: PaceMode = car.paceMode): Battle | null {
+    if (
+      car.status !== "racing" ||
+      this.safetyCar.status !== "green" ||
+      car.position <= 1
+    )
+      return null;
+    const ahead = this.cars[this.order[car.position - 2]];
+    if (ahead.status !== "racing") return null;
+    const distance = this.raceDistance(ahead) - this.raceDistance(car);
+    if (distance <= 0 || distance > this.lapLength / 2) return null;
+    const gap = distance / (this.lapLength / this.expectedLap(car));
+    if (gap > 1.5) return null;
+
+    const paceDelta =
+      this.expectedLap(ahead) - this.expectedLap(car, { paceMode });
+    const dirtyAir = DIRTY_AIR * (1 - ATTACK_GAP);
+    // Lap-to-lap noise sometimes gives a slower car a shot and denies a faster one: average the
+    // pass chance over the spread of the pace difference.
+    const wetness = this.weather.wetness;
+    const sigma = Math.hypot(
+      lapNoiseSigma(this.driverOf[car.index], wetness),
+      lapNoiseSigma(this.driverOf[ahead.index], wetness),
+    );
+    let passChance = 0;
+    for (const [z, w] of GAUSS_HERMITE) {
+      const delta = paceDelta + z * sigma;
+      if (delta > dirtyAir)
+        passChance += w * this.passChancePerLap(car, ahead, delta);
+    }
+    return {
+      ahead: ahead.index,
+      gap,
+      paceDelta,
+      dirtyAir,
+      passChance: Math.min(0.95, passChance),
+    };
   }
 
   carByDriver(driverId: string): CarState | undefined {
@@ -571,7 +692,7 @@ export class Race {
               : this.scSpeed;
       } else if (ahead && gapSeconds < 1) {
         // Dirty air: harder to follow closely.
-        speed = L / (car.lapTimeTarget + 0.35 * (1 - gapSeconds));
+        speed = L / (car.lapTimeTarget + DIRTY_AIR * (1 - gapSeconds));
       }
 
       if (this.yielding.has(car.index)) speed *= 0.9;
@@ -592,7 +713,7 @@ export class Race {
       if (
         !car.passing &&
         ahead &&
-        ahead.distance < Math.max(18, speed * 0.3) &&
+        ahead.distance < Math.max(18, speed * ATTACK_GAP) &&
         speed > ahead.other.speed
       ) {
         if (status === "green" && this.tryOvertake(car, ahead.other)) {
@@ -624,32 +745,47 @@ export class Race {
     if (teammates && this.teamOrders[car.teamId] === "hold" && !lapping)
       return false;
 
-    let perLap: number;
-    if (lapping) {
-      perLap = 0.9; // blue flags
-    } else {
-      const delta = defender.lapTimeTarget - car.lapTimeTarget;
-      const difficulty = Math.min(
-        5,
-        Math.max(1, this.track.overtakingDifficulty),
-      );
-      const rc =
-        1 +
-        (this.driverOf[car.index].ratings.racecraft -
-          this.driverOf[defender.index].ratings.racecraft) *
-          0.025;
-      perLap =
-        OVERTAKE_BASE[difficulty - 1] *
-        Math.min(3, Math.max(0, (delta - 0.1) / 0.9)) *
-        Math.max(0.2, rc) *
-        (car.lap === 0 ? 2 : 1);
-    }
+    const perLap = lapping
+      ? 0.9 // blue flags
+      : this.passChancePerLap(
+          car,
+          defender,
+          defender.lapTimeTarget - car.lapTimeTarget,
+        );
     const perTick =
       1 - Math.pow(1 - Math.min(0.95, perLap), DT / car.lapTimeTarget);
     if (!this.rng.chance(perTick)) return false;
     if (!lapping)
       this.emit({ type: "overtake", car: car.index, on: defender.index });
     return true;
+  }
+
+  /** Chance per lap that `car` passes `defender` once close, at a given pace advantage (s/lap). */
+  private passChancePerLap(
+    car: CarState,
+    defender: CarState,
+    delta: number,
+  ): number {
+    if (
+      car.teamId === defender.teamId &&
+      this.teamOrders[car.teamId] === "hold"
+    )
+      return 0;
+    const difficulty = Math.min(
+      5,
+      Math.max(1, this.track.overtakingDifficulty),
+    );
+    const rc =
+      1 +
+      (this.driverOf[car.index].ratings.racecraft -
+        this.driverOf[defender.index].ratings.racecraft) *
+        0.025;
+    return (
+      OVERTAKE_BASE[difficulty - 1] *
+      Math.min(3, Math.max(0, (delta - 0.1) / 0.9)) *
+      Math.max(0.2, rc) *
+      (car.lap === 0 ? 2 : 1)
+    );
   }
 
   private applyTeamOrder(
@@ -874,17 +1010,7 @@ export class Race {
   private startLap(car: CarState) {
     const driver = this.driverOf[car.index];
     const wetness = this.weather.wetness;
-    const expected = expectedLapTime({
-      track: this.track,
-      team: this.teamOf[car.index],
-      driver,
-      compound: car.tyre.compound,
-      wear: car.tyre.wear,
-      fuelKg: car.fuelKg,
-      wetness,
-      paceMode: car.paceMode,
-      outLap: car.outLap,
-    });
+    const expected = this.expectedLap(car);
     const { noise } = lapNoise(driver, wetness, this.rng);
     car.lapTimeTarget = Math.max(expected * 0.97, expected + noise);
 

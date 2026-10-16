@@ -106,13 +106,22 @@
     "noMandatoryStop": "No mandatory stop at this distance.",
     "weather": "Weather",
     "weathers": {
-      "auto": { "label": "Realistic", "detail": "{risk}% rain risk" },
-      "dry": { "label": "Dry", "detail": "No rain" },
+      "auto": {
+        "label": "Realistic",
+        "detail": "{risk}% rain risk"
+      },
+      "dry": {
+        "label": "Dry",
+        "detail": "No rain"
+      },
       "mixed": {
         "label": "Changeable",
         "detail": "Rain arrives or clears mid-race"
       },
-      "wet": { "label": "Wet", "detail": "Rain all race" }
+      "wet": {
+        "label": "Wet",
+        "detail": "Rain all race"
+      }
     },
     "objectiveAt": "Team objective at {track}",
     "carRank": "{team} has the {rank, selectordinal, one {#st} two {#nd} few {#rd} other {#th}} fastest car on this kind of track.",
@@ -297,7 +306,8 @@
     "wetStart": "Wet start: {tyre}",
     "start0": "No-stop: {a}",
     "start1": "1-stop: {a} to L{al}, then {b}",
-    "start2": "2-stop: {a} to L{al}, then {b} to L{bl}, then {c}"
+    "start2": "2-stop: {a} to L{al}, then {b} to L{bl}, then {c}",
+    "boxNow": "Box this lap for {next}"
   },
   "alert": {
     "sc": {
@@ -424,7 +434,8 @@
     "boxBox": "Box, box. {car}, box this lap for {compound}.",
     "cancelStop": "Stay out, stay out. Cancel the stop.",
     "orderSwap": "Team order: swap positions when you're close.",
-    "orderHold": "Hold positions, no fighting please."
+    "orderHold": "Hold positions, no fighting please.",
+    "boxCall": "{car}, the pit window is open. Box this lap for {tyre}."
   },
   "howTo": {
     "title": "How to play",
@@ -450,7 +461,8 @@
       "2": "<b>The coloured bar</b> is tyre life: full = fresh, it shrinks as the tyres wear and turns red when they're nearly finished. <b>~45% · 8L left</b> means about 45% worn and roughly 8 laps before they fall off a cliff and get very slow.",
       "3": "<b>Push / Balanced / Conserve</b> is the pace. Push is faster but eats tyres; Conserve is slower but they last longer.",
       "4": "<b>The five circles</b> choose the tyre for the next stop, and <k>Box</k> calls the car in. It pits when it next crosses the start/finish line. Changed your mind? <k>Cancel</k>.",
-      "5": "<b>Plan: box ~L12 for hards</b> is advice from your strategists. When in doubt, follow it."
+      "5": "<b>Plan: box ~L12 for hards</b> is advice from your strategists. When it changes to <b>Box this lap</b>, the <k>Box</k> button flashes green and your engineer calls it on the radio. When in doubt, follow it.",
+      "6": "<b>Box now → P14, 2.1 s behind ALB</b> shows where you'd rejoin if you pitted this lap (amber = straight into traffic). Below it, hints explain the fight you're in: the pass chance per lap, why you're stuck, and when an undercut is on."
     },
     "decisions": {
       "title": "The decisions that win races",
@@ -459,7 +471,8 @@
       "3": "<b>Safety Car = cheap pit stop.</b> When the Safety Car comes out everyone slows down, so a stop costs about half the usual time. The game pauses and offers <k>Box both</k>: if a stop was coming in the next few laps anyway, take it.",
       "4": "<b>Rain.</b> Watch the wetness % in the header. From about 17% inters are faster than slicks; in heavy rain switch to full wets. When the track dries, go back to slicks. Change too early or too late and you lose lots of time.",
       "5": "<b>Push at the right moments:</b> to attack the car ahead, to defend, or in the last few laps when the tyres no longer need to last.",
-      "6": "<b>Team orders.</b> <k>Swap</k>: the car ahead lets its faster teammate through when they're close. <k>Hold</k>: your drivers don't fight each other."
+      "6": "<b>Team orders.</b> <k>Swap</k>: the car ahead lets its faster teammate through when they're close. <k>Hold</k>: your drivers don't fight each other.",
+      "7": "<b>Overtaking is hard, like in real F1.</b> Following within a second costs up to 0.35 s a lap in dirty air, so you need a clear pace advantage (fresher tyres, a faster car) to pass. If the card says you're stuck, use the <b>undercut</b>: box a lap before the car ahead and use the fresh tyres to jump it while it does its stop."
     },
     "tyres": {
       "title": "Tyres",
@@ -490,5 +503,24 @@
       "5": "In the last 3 laps switch both cars to Push."
     },
     "start": "Start a race"
+  },
+  "insight": {
+    "rejoinLead": "Box now → rejoin P1",
+    "rejoin": "Box now → P{position}, {gap} s behind {car}",
+    "rejoinTraffic": "Box now → P{position}, in traffic {gap} s behind {car}",
+    "attacking": "Attacking {car}: {delta} s/lap faster · pass chance ~{chance}% a lap",
+    "stuckFaster": "Stuck behind {car}: dirty air costs ~{dirty} s and you're only {delta} s/lap faster · pass chance ~{chance}% a lap",
+    "stuckSlower": "Stuck behind {car}: you're {delta} s/lap slower · pass chance ~{chance}% a lap",
+    "defending": "{car} is attacking you · pass chance ~{chance}% a lap",
+    "undercutOn": "Undercut on {car} is on: box now to gain ~{gain} s",
+    "undercutTraffic": "An undercut on {car} would work, but you'd rejoin in traffic behind {other}",
+    "undercutThreat": "{car} behind could undercut you (~{gain} s)",
+    "tipPush": "Switch to Push: pass chance rises to ~{chance}% a lap",
+    "tipUndercut": "Try the undercut instead",
+    "tipWait": "You won't get past on track: the pit stops are your chance",
+    "tipHold": "Team order Hold is on: teammates don't race",
+    "tipDefend": "Push to keep them behind",
+    "tipCover": "Box first to cover it",
+    "tipBoxFor": "Box this lap for {tyre}"
   }
 }
