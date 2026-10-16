@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { idealCompoundFor, type Compound, type Race } from "@/engine";
 import { suggestedStart } from "@/game/pit-wall";
 import { cn } from "@/lib/utils";
+import Link from "next/link";
 import { useState } from "react";
 import { TyreBadge } from "./tyre-badge";
 
@@ -103,6 +104,16 @@ export function StartOverlay({
         >
           Lights out
         </Button>
+        <p className="text-center text-xs text-muted-foreground">
+          First time?{" "}
+          <Link
+            href="/how-to-play"
+            target="_blank"
+            className="underline hover:text-foreground"
+          >
+            How to play
+          </Link>
+        </p>
       </div>
     </div>
   );

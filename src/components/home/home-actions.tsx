@@ -4,7 +4,7 @@ import { Button, buttonVariants } from "@/components/ui/button";
 import { calendar, getTrack, meta, teams } from "@/data";
 import { lapsFor, newSeed, raceQuery } from "@/game/race-options";
 import { cn } from "@/lib/utils";
-import { Flag, Shuffle } from "lucide-react";
+import { BookOpen, Flag, Shuffle } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
@@ -41,6 +41,15 @@ export function HomeActions() {
       >
         <Shuffle /> Quick race
       </Button>
+      <Link
+        href="/how-to-play"
+        className={cn(
+          buttonVariants({ size: "lg", variant: "ghost" }),
+          "h-11 px-5 text-base",
+        )}
+      >
+        <BookOpen /> How to play
+      </Link>
     </div>
   );
 }

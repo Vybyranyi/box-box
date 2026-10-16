@@ -5,7 +5,7 @@ import type { TrackStatus } from "@/engine";
 import { SPEEDS, type Speed } from "@/game/race-runner";
 import { formatRaceTime } from "@/lib/format";
 import { cn } from "@/lib/utils";
-import { CloudRain, Pause, Play, Sun } from "lucide-react";
+import { CircleHelp, CloudRain, Pause, Play, Sun } from "lucide-react";
 import Link from "next/link";
 
 const STATUS: Record<
@@ -95,6 +95,15 @@ export function RaceHeader({
       </span>
 
       <div className="ml-auto flex items-center gap-2">
+        <Link
+          href="/how-to-play"
+          target="_blank"
+          className="grid size-8 place-items-center rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground"
+          title="How to play (opens in a new tab)"
+          aria-label="How to play"
+        >
+          <CircleHelp className="size-5" />
+        </Link>
         {autoPause && (
           <button
             type="button"
