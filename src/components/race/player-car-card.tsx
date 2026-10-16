@@ -21,7 +21,8 @@ import {
 import { useMsg } from "@/i18n/use-msg";
 import { formatGap, formatLapTime } from "@/lib/format";
 import { cn } from "@/lib/utils";
-import { Shield, Zap } from "lucide-react";
+import type { RadioRequest } from "@/game/radio-requests";
+import { Radio, Shield, Zap } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useState } from "react";
 import { TYRE_COLORS, TyreBadge } from "./tyre-badge";
@@ -46,12 +47,17 @@ export function PlayerCarCard({
   selected,
   onSelect,
   onCommand,
+  request,
+  onAnswer,
 }: {
   race: Race;
   car: CarState;
   selected: boolean;
   onSelect: () => void;
   onCommand: (command: RaceCommand) => void;
+  /** An open radio request from this driver, waiting for Yes or No. */
+  request?: RadioRequest;
+  onAnswer: (id: string, yes: boolean) => void;
 }) {
   const t = useTranslations("car");
   const translate = useMsg();
@@ -106,6 +112,48 @@ export function PlayerCarCard({
           {car.status === "retired" ? t("dnf") : `P${car.position}`}
         </span>
       </div>
+
+      {request && (
+        <div className="flex flex-col gap-1.5 rounded-lg border border-sky-400/60 bg-sky-500/10 p-2">
+          <p className="flex items-start gap-1.5 text-xs font-semibold text-sky-100">
+            <Radio className="mt-0.5 size-3.5 shrink-0 text-sky-300" />
+            <span>
+              {request.code}: «{translate(request.message)}»
+            </span>
+          </p>
+          <div className="h-0.5 overflow-hidden rounded-full bg-sky-950">
+            <div
+              className="h-full bg-sky-300 transition-[width]"
+              style={{
+                width: `${Math.max(0, Math.min(100, ((request.expiresAt - race.time) / (request.expiresAt - request.askedAt)) * 100))}%`,
+              }}
+            />
+          </div>
+          <div className="flex gap-1.5">
+            <Button
+              size="sm"
+              className="flex-1 bg-emerald-600 font-bold text-white hover:bg-emerald-500"
+              onClick={(e) => {
+                e.stopPropagation();
+                onAnswer(request.id, true);
+              }}
+            >
+              {t("requestYes")}
+            </Button>
+            <Button
+              size="sm"
+              variant="secondary"
+              className="flex-1 font-bold"
+              onClick={(e) => {
+                e.stopPropagation();
+                onAnswer(request.id, false);
+              }}
+            >
+              {t("requestNo")}
+            </Button>
+          </div>
+        </div>
+      )}
 
       {active && (
         <>

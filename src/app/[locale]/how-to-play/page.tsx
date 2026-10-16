@@ -21,6 +21,7 @@ const KEYS = [
   ["B", "box"],
   ["Q / E", "car"],
   ["O / D", "boost"],
+  ["Y / N", "answer"],
   ["Esc", "esc"],
 ] as const;
 
@@ -76,7 +77,7 @@ export default async function HowToPlayPage() {
 
       <Section number={2} title={t("screen.title")}>
         <ul className="flex flex-col gap-2">
-          {items("screen", 4).map((item, i) => (
+          {items("screen", 5).map((item, i) => (
             <li key={i}>{item}</li>
           ))}
         </ul>
@@ -84,7 +85,7 @@ export default async function HowToPlayPage() {
 
       <Section number={3} title={t("card.title")}>
         <ul className="flex flex-col gap-2">
-          {items("card", 7).map((item, i) => (
+          {items("card", 8).map((item, i) => (
             <li key={i}>{item}</li>
           ))}
         </ul>
@@ -113,6 +114,7 @@ export default async function HowToPlayPage() {
 
       <Section number={6} title={t("results.title")}>
         <p>{t.rich("results.body", tags)}</p>
+        <p>{t.rich("results.moments", tags)}</p>
       </Section>
 
       <Section number={7} title={t("keys.title")}>

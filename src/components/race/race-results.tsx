@@ -7,8 +7,16 @@ import { gradeRace, type Grade } from "@/game/objective";
 import { newSeed, raceQuery } from "@/game/race-options";
 import { formatGap, formatLapTime, formatRaceTime } from "@/lib/format";
 import { cn } from "@/lib/utils";
-import { Check, RotateCcw, Settings2, X } from "lucide-react";
+import {
+  Check,
+  CircleAlert,
+  CircleCheck,
+  RotateCcw,
+  Settings2,
+  X,
+} from "lucide-react";
 import { Link, useRouter } from "@/i18n/navigation";
+import type { Moment } from "@/game/moments";
 import { useMsg } from "@/i18n/use-msg";
 import { useTranslations } from "next-intl";
 import { TyreBadge } from "./tyre-badge";
@@ -25,10 +33,13 @@ const GRADE_STYLE: Record<Grade, string> = {
 export function RaceResults({
   race,
   teamId,
+  moments = [],
   onClose,
 }: {
   race: Race;
   teamId: string | null;
+  /** What decided the player's race, from `MomentLog`. */
+  moments?: Moment[];
   onClose: () => void;
 }) {
   const t = useTranslations("results");
@@ -186,6 +197,36 @@ export function RaceResults({
                 })}
               </div>
             </div>
+          </section>
+        )}
+
+        {teamId && (
+          <section
+            className="flex flex-col gap-2 rounded-xl border bg-card p-4"
+            aria-label={t("moments")}
+          >
+            <h3 className="text-xs font-semibold text-muted-foreground uppercase">
+              {t("moments")}
+            </h3>
+            {moments.length === 0 ? (
+              <p className="text-sm text-muted-foreground">{t("noMoments")}</p>
+            ) : (
+              <ul className="flex flex-col gap-1.5">
+                {moments.map((m, i) => (
+                  <li key={i} className="flex items-start gap-2 text-sm">
+                    <span className="w-9 shrink-0 font-mono text-xs text-muted-foreground">
+                      {t("lapShort", { lap: m.lap })}
+                    </span>
+                    {m.tone === "good" ? (
+                      <CircleCheck className="mt-0.5 size-4 shrink-0 text-emerald-400" />
+                    ) : (
+                      <CircleAlert className="mt-0.5 size-4 shrink-0 text-amber-400" />
+                    )}
+                    <span>{translate(m.message)}</span>
+                  </li>
+                ))}
+              </ul>
+            )}
           </section>
         )}
 

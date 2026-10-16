@@ -14,12 +14,15 @@ export function TimingTower({
   totalLaps,
   selectedDriverId,
   onSelect,
+  flashes = {},
 }: {
   rows: TowerRow[];
   lap: number;
   totalLaps: number;
   selectedDriverId: string | null;
   onSelect: (driverId: string) => void;
+  /** Rows that just gained or lost a place on track, to flash green or red. */
+  flashes?: Record<string, "up" | "down">;
 }) {
   const t = useTranslations("tower");
   const [mode, setMode] = useState<"interval" | "leader">("interval");
@@ -76,6 +79,8 @@ export function TimingTower({
                 row.isPlayer && "bg-primary/10",
                 row.driverId === selectedDriverId && "bg-accent",
                 row.state === "retired" && "text-muted-foreground",
+                flashes[row.driverId] === "up" && "animate-flash-up",
+                flashes[row.driverId] === "down" && "animate-flash-down",
               )}
             >
               <span className="text-right font-bold tabular-nums">

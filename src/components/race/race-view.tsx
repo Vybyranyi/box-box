@@ -13,12 +13,17 @@ import { alertFor, type RaceAlert } from "@/game/alerts";
 import { saveToHistory } from "@/game/history";
 import { gradeRace } from "@/game/objective";
 import { DEFAULT_SETTINGS, type Settings } from "@/game/race-options";
+import { DEFAULT_SOUND, SoundBoard, type SoundSettings } from "@/lib/sound";
 import { useStored } from "@/lib/storage";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { describeEvent, ENGINEER, type FeedItem } from "@/game/event-text";
 import { msg, tyresPlural, type Msg } from "@/game/messages";
 import { recommendedCompound } from "@/game/pit-wall";
 import { boxCalls } from "@/game/insights";
+import { MomentLog, type Moment } from "@/game/moments";
+import { RadioRequests, type RadioRequest } from "@/game/radio-requests";
+import { cuesFor } from "@/game/sound-cues";
+import { useMsg } from "@/i18n/use-msg";
 import { radioFor } from "@/game/radio";
 import { RaceRunner, SPEEDS, type Speed } from "@/game/race-runner";
 import { buildTower } from "@/game/tower";
@@ -51,6 +56,8 @@ export type RaceSetup = {
 
 /** How often the React side (tower, panels) refreshes; the map redraws every frame. */
 const UI_REFRESH_MS = 250;
+/** How long a timing tower row flashes after a pass, ms. */
+const FLASH_MS = 1400;
 const FEED_LENGTH = 120;
 function createRunner(
   setup: RaceSetup,
@@ -83,6 +90,8 @@ function feedItems(
 
 export function RaceView({ setup }: { setup: RaceSetup }) {
   const t = useTranslations();
+  const locale = useLocale();
+  const translateMsg = useMsg();
   const teamId = setup.playerTeamId;
   const [runner, setRunner] = useState(() => {
     const r = createRunner(setup);
@@ -118,6 +127,44 @@ export function RaceView({ setup }: { setup: RaceSetup }) {
   const pendingAlert = useRef<RaceAlert | null>(null);
   const localMessageId = useRef(-1);
   const boxCallsMade = useRef(new Set<string>());
+  const requests = useRef(new RadioRequests());
+  const [openRequests, setOpenRequests] = useState<readonly RadioRequest[]>([]);
+  const momentLog = useRef<MomentLog | null>(null);
+  const [moments, setMoments] = useState<Moment[]>([]);
+  const flashTimes = useRef(
+    new Map<string, { dir: "up" | "down"; at: number }>(),
+  );
+  const [flashes, setFlashes] = useState<Record<string, "up" | "down">>({});
+
+  const [soundSettings, setSoundSettings] = useStored<SoundSettings>(
+    "sound",
+    DEFAULT_SOUND,
+  );
+  const [sound] = useState(() => new SoundBoard());
+  useEffect(() => () => sound.dispose(), [sound]);
+  useEffect(
+    () => sound.configure(soundSettings, locale),
+    [sound, soundSettings, locale],
+  );
+  // Browsers only allow audio after a gesture: unlock on the first click or key press.
+  useEffect(() => {
+    const unlock = () => sound.unlock();
+    window.addEventListener("pointerdown", unlock);
+    window.addEventListener("keydown", unlock);
+    return () => {
+      window.removeEventListener("pointerdown", unlock);
+      window.removeEventListener("keydown", unlock);
+    };
+  }, [sound]);
+
+  const playRadio = (items: FeedItem[]) => {
+    for (const item of items)
+      if (item.kind === "radio")
+        sound.radio(
+          translateMsg(item.message),
+          item.from === ENGINEER ? "engineer" : "driver",
+        );
+  };
 
   const drawRef = useRef<(() => void) | null>(null);
   const register = useCallback((draw: (() => void) | null) => {
@@ -135,26 +182,84 @@ export function RaceView({ setup }: { setup: RaceSetup }) {
     color: teamId ? teams.find((x) => x.id === teamId)?.color : undefined,
   });
 
-  // Engine events → feed, radio and (optionally) an auto-pause decision prompt.
+  /** A driver asking for something on the radio. */
+  const driverRadio = (request: RadioRequest): FeedItem => {
+    const car = race.carByDriver(request.driverId)!;
+    return {
+      id: localMessageId.current--,
+      lap: Math.min(race.leaderLap + 1, race.laps),
+      message: request.message,
+      tone: "info",
+      kind: "radio",
+      from: car.code,
+      color: race.team(car).color,
+    };
+  };
+
+  // Engine events → feed, radio, sounds, driver requests and (optionally) an auto-pause prompt.
   const onRaceEvents = useEffectEvent((events: TimedEvent[]) => {
-    pendingFeed.current.push(...feedItems(race, events, teamId));
-    if (teamId)
+    const items = feedItems(race, events, teamId);
+    if (teamId) {
       for (const call of boxCalls(race, teamId, boxCallsMade.current))
-        pendingFeed.current.push(engineerRadio(call));
+        items.push(engineerRadio(call));
+      for (const request of requests.current.update(race, teamId))
+        items.push(driverRadio(request));
+      momentLog.current?.observe(race);
+    }
+    pendingFeed.current.push(...items);
+    playRadio(items);
+    for (const cue of cuesFor(race, events, teamId)) sound.play(cue);
+
+    const now = performance.now();
+    for (const e of events)
+      if (e.type === "overtake") {
+        flashTimes.current.set(race.cars[e.car].driverId, {
+          dir: "up",
+          at: now,
+        });
+        flashTimes.current.set(race.cars[e.on].driverId, {
+          dir: "down",
+          at: now,
+        });
+      }
+
     if (!autoPause) return;
     for (const event of events) {
       const next = alertFor(race, event, teamId);
       if (next) {
         pendingAlert.current = next;
         runner.setPaused(true);
+        sound.alert();
       }
     }
+  });
+
+  /** Refresh the React-side copies of the open requests and the tower flashes. */
+  const syncOverlays = useEffectEvent((now: number) => {
+    const active = requests.current.active;
+    if (
+      active.length !== openRequests.length ||
+      active.some((r, i) => r.id !== openRequests[i]?.id)
+    )
+      setOpenRequests([...active]);
+    const next: Record<string, "up" | "down"> = {};
+    for (const [driverId, flash] of flashTimes.current) {
+      if (now - flash.at < FLASH_MS) next[driverId] = flash.dir;
+      else flashTimes.current.delete(driverId);
+    }
+    if (Object.keys(next).join() !== Object.keys(flashes).join())
+      setFlashes(next);
+    sound.setAmbience({
+      running: started && !runner.paused && !race.finished,
+      neutralised: race.trackStatus !== "green",
+    });
   });
   useEffect(() => runner.onEvents((events) => onRaceEvents(events)), [runner]);
 
   // Chequered flag: grade the race, store it in the history and show the results.
   const onFinished = useEffectEvent(() => {
     if (teamId) {
+      setMoments(momentLog.current?.finish(race) ?? []);
       const report = gradeRace(race, teamId);
       saveToHistory({
         id: `${setup.seed}-${setup.trackId}-${teamId}-${race.laps}-${setup.weather}-${setup.difficulty}`,
@@ -208,6 +313,7 @@ export function RaceView({ setup }: { setup: RaceSetup }) {
           setPaused(true);
           pendingAlert.current = null;
         }
+        syncOverlays(now);
         setFrame((n) => n + 1);
       }
       raf = requestAnimationFrame(frame);
@@ -237,6 +343,7 @@ export function RaceView({ setup }: { setup: RaceSetup }) {
   const pushLocalRadio = (message: Msg) => {
     const item = engineerRadio(message);
     setFeed((f) => [item, ...f].slice(0, FEED_LENGTH));
+    playRadio([item]);
   };
 
   const issueCommand = (command: RaceCommand) => {
@@ -261,12 +368,28 @@ export function RaceView({ setup }: { setup: RaceSetup }) {
     }
   };
 
+  /** The player's answer to a driver's radio request. */
+  const answerRequest = (id: string, yes: boolean) => {
+    const request = requests.current.answer(id);
+    setOpenRequests(requests.current.active.slice());
+    if (!request) return;
+    if (!yes) return pushLocalRadio(request.noReply);
+    // Pit stops and team orders get their own radio call; pushing gets the reply.
+    for (const command of request.yes) issueCommand(command);
+    if (request.kind === "push") pushLocalRadio(request.yesReply);
+  };
+
   const start = (tyres: Record<string, Compound>) => {
     // Same seed, same grid and weather: only the starting tyres change.
     const next = createRunner(setup, tyres);
     next.setSpeed(speed);
     pendingFeed.current = [];
     boxCallsMade.current.clear();
+    requests.current = new RadioRequests();
+    setOpenRequests([]);
+    momentLog.current = teamId ? new MomentLog(teamId) : null;
+    sound.unlock();
+    sound.play("lightsOut");
     setFeed(feedItems(next.race, next.race.events, teamId).reverse());
     setRunner(next);
     setStarted(true);
@@ -310,6 +433,8 @@ export function RaceView({ setup }: { setup: RaceSetup }) {
           driverId: car.driverId,
           compound: recommendedCompound(race, car),
         });
+    } else if ((e.code === "KeyY" || e.code === "KeyN") && openRequests[0]) {
+      answerRequest(openRequests[0].id, e.code === "KeyY");
     } else if ((e.code === "KeyO" || e.code === "KeyD") && started) {
       const car = playerCars.find((c) => c.driverId === selected);
       if (car)
@@ -322,8 +447,21 @@ export function RaceView({ setup }: { setup: RaceSetup }) {
   });
   useEffect(() => {
     const listener = (e: KeyboardEvent) => onKey(e);
+    // Space is the pause key: don't let it also press whichever button has focus (browsers
+    // activate a focused button when Space is released).
+    const keyUp = (e: KeyboardEvent) => {
+      if (
+        e.code === "Space" &&
+        (e.target as HTMLElement | null)?.closest("button")
+      )
+        e.preventDefault();
+    };
     window.addEventListener("keydown", listener);
-    return () => window.removeEventListener("keydown", listener);
+    window.addEventListener("keyup", keyUp);
+    return () => {
+      window.removeEventListener("keydown", listener);
+      window.removeEventListener("keyup", keyUp);
+    };
   }, []);
 
   const options = useMemo(
@@ -346,6 +484,17 @@ export function RaceView({ setup }: { setup: RaceSetup }) {
         speed={speed}
         onTogglePause={togglePause}
         onSpeed={changeSpeed}
+        sound={{
+          enabled: soundSettings.enabled,
+          voice: soundSettings.voice,
+          onToggle: () => {
+            const enabled = !soundSettings.enabled;
+            setSoundSettings({ ...soundSettings, enabled });
+            if (enabled) sound.unlock();
+          },
+          onToggleVoice: () =>
+            setSoundSettings({ ...soundSettings, voice: !soundSettings.voice }),
+        }}
         autoPause={
           teamId
             ? {
@@ -364,6 +513,7 @@ export function RaceView({ setup }: { setup: RaceSetup }) {
             totalLaps={race.laps}
             selectedDriverId={selected}
             onSelect={setSelected}
+            flashes={flashes}
           />
         </div>
         <div className="relative order-first h-[55vh] min-h-0 overflow-hidden rounded-xl border bg-card lg:order-none lg:h-auto">
@@ -408,6 +558,8 @@ export function RaceView({ setup }: { setup: RaceSetup }) {
                 selectedDriverId={selected}
                 onSelect={setSelected}
                 onCommand={issueCommand}
+                requests={openRequests}
+                onAnswer={answerRequest}
               />
               <FastestLap race={race} />
             </>
@@ -423,6 +575,7 @@ export function RaceView({ setup }: { setup: RaceSetup }) {
         <RaceResults
           race={race}
           teamId={teamId}
+          moments={moments}
           onClose={() => setShowResults(false)}
         />
       )}

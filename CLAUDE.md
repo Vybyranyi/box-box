@@ -31,7 +31,8 @@ Driver headshots, team logos and car renders come from the formula1.com CDN, and
 - `src/data/` - generated JSON (teams, drivers, tracks, calendar), committed to the repo. Import it through `src/data/index.ts`. Never edit the JSON by hand: change `scripts/curated/*` or the script and run `npm run data`.
 - `src/game/` - glue between engine and UI, no React: `RaceRunner` (real time → engine steps, position interpolation), `TrackRenderer` (Canvas 2D), timing tower rows, feed text.
 - `src/app/`, `src/components/` - UI. The map redraws every animation frame outside React; the HUD re-renders about 4×/s. Flow: `/` → `/play` (team, then race setup) → `/qualifying?…` → `/race?…` (results overlay at the chequered flag). The same query (`track`, `team`, `laps`, `weather`, `seed`) is passed along, so qualifying and race build the identical race.
-- Per-browser state (settings, race history) lives in localStorage via `useStored` in `src/lib/storage.ts`; never read storage during render any other way.
+- Per-browser state (settings, sound settings, race history) lives in localStorage via `useStored` in `src/lib/storage.ts`; never read storage during render any other way.
+- Driver radio requests (`src/game/radio-requests.ts`), key moments for the results screen (`src/game/moments.ts`) and sound cues (`src/game/sound-cues.ts`) are plain TS over the race state. The audio itself is synthesised in `src/lib/sound.ts` (Web Audio, speech synthesis for radio); no audio files, and never real F1 broadcast recordings.
 - `scripts/` - data collection scripts (Jolpica, OpenF1, `bacinger/f1-circuits` GeoJSON), run manually with `tsx`. The Vercel build never calls external APIs.
 
 ## Race engine

@@ -12,10 +12,16 @@ const COLORS = {
   retired: "#6b7280",
   safetyCar: "#FFB800",
   vscTint: "rgba(255,184,0,0.35)",
+  battle: "#ffffff",
+  playerBattle: "#f97316",
+  boost: "#fde047",
 };
 
 const CAR_RADIUS = 6.5;
 const PIT_LANE_OFFSET = 18;
+/** Cars closer than this (s) are in a fight: drawn with a line between them. */
+const BATTLE_GAP = 1;
+
 /** Share of the lap the pit lane spans on either side of the line, for drawing. */
 const PIT_LANE_SPAN = 0.035;
 
@@ -135,6 +141,7 @@ export class TrackRenderer {
 
     this.drawTrack();
     const positions = this.carPositions(runner);
+    if (race.trackStatus === "green") this.drawBattles(positions, options);
     if (race.trackStatus === "sc") this.drawSafetyCar(runner);
 
     // Back markers first so the leaders are drawn on top.
@@ -201,6 +208,43 @@ export class TrackRenderer {
       }
       return this.at(runner.renderDistance(car.index));
     });
+  }
+
+  /**
+   * A line between each car and the car ahead when they are within a second: the fights on
+   * track. Ones involving the player stand out; an Overtake Mode attack glows yellow.
+   */
+  private drawBattles(positions: [number, number][], options: RenderOptions) {
+    const { ctx, race } = this;
+    ctx.lineCap = "round";
+    for (let i = 1; i < race.order.length; i++) {
+      const car = race.cars[race.order[i]];
+      const ahead = race.cars[race.order[i - 1]];
+      if (car.status !== "racing" || ahead.status !== "racing") continue;
+      if (car.interval === null || car.interval >= BATTLE_GAP) continue;
+      const [x1, y1] = positions[car.index];
+      const [x2, y2] = positions[ahead.index];
+      // Cars a lap apart can sit next to each other on the map; skip anything far apart.
+      if (Math.hypot(x2 - x1, y2 - y1) > 60) continue;
+      const player =
+        car.teamId === options.playerTeamId ||
+        ahead.teamId === options.playerTeamId;
+      const closeness = 1 - car.interval / BATTLE_GAP;
+      const attack = car.boost?.kind === "attack";
+      ctx.strokeStyle = attack
+        ? COLORS.boost
+        : player
+          ? COLORS.playerBattle
+          : COLORS.battle;
+      ctx.globalAlpha =
+        player || attack ? 0.5 + 0.5 * closeness : 0.25 + 0.35 * closeness;
+      ctx.lineWidth = player || attack ? 4 : 2.5;
+      ctx.beginPath();
+      ctx.moveTo(x1, y1);
+      ctx.lineTo(x2, y2);
+      ctx.stroke();
+    }
+    ctx.globalAlpha = 1;
   }
 
   private drawSafetyCar(runner: RaceRunner) {

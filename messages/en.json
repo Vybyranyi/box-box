@@ -181,7 +181,11 @@
     "paused": "Paused",
     "hotkeys": "Space pause · 1–5 speed · B box · Q/E switch car · Esc dismiss",
     "results": "Race results",
-    "mapLabel": "{track} race map"
+    "mapLabel": "{track} race map",
+    "soundOn": "Turn sound on",
+    "soundOff": "Turn sound off",
+    "voiceOn": "Read team radio aloud",
+    "voiceOff": "Stop reading team radio aloud"
   },
   "tower": {
     "label": "Timing tower",
@@ -229,7 +233,9 @@
     "defend": "Defend",
     "defendHint": "Spend 25% battery to be 0.4 s faster for a lap and hold off the car behind (within 1 s). Key D",
     "attacking": "⚡ Overtake on",
-    "defending": "Defending"
+    "defending": "Defending",
+    "requestYes": "Yes (Y)",
+    "requestNo": "No (N)"
   },
   "pitWall": {
     "title": "Pit wall · {team}",
@@ -304,7 +310,10 @@
     "lapped": "+{laps} {laps, plural, one {lap} other {laps}}",
     "dnfAt": "DNF (L{lap})",
     "dnf": "DNF",
-    "dsq": "DSQ"
+    "dsq": "DSQ",
+    "moments": "Key moments",
+    "noMoments": "A quiet race: no big calls either way.",
+    "lapShort": "L{lap}"
   },
   "objective": {
     "win": "Win the race",
@@ -478,7 +487,8 @@
       "1": "<b>Left: the timing tower.</b> Positions, the gap to the car ahead (or to the leader), each car's tyre and how many laps it has done on it. Your cars are highlighted. Click any row to follow that car.",
       "2": "<b>Centre: the map.</b> Dots are cars in their team colours; yours have a white ring. Cars in the pits move along the dashed pit lane.",
       "3": "<b>Right: your pit wall.</b> One card per driver, the team orders and the radio.",
-      "4": "<b>Top:</b> track status (green / Safety Car), weather, pause and speed. A race at 1× takes as long as a real one, so play at <k>4×</k>–<k>8×</k>: auto-pause stops the race whenever something needs your decision."
+      "4": "<b>Top:</b> track status (green / Safety Car), weather, pause and speed. A race at 1× takes as long as a real one, so play at <k>4×</k>–<k>8×</k>: auto-pause stops the race whenever something needs your decision.",
+      "5": "<b>Sound.</b> Team radio comes with the broadcast \"bip\" and is read aloud; engines, passes, pit stops and the Safety Car have their own sounds. The 🔊 and 🎙 buttons at the top turn sound and the radio voice on or off."
     },
     "card": {
       "title": "Your driver card",
@@ -488,7 +498,8 @@
       "4": "<b>The five circles</b> choose the tyre for the next stop, and <k>Box</k> calls the car in. It pits when it next crosses the start/finish line. Changed your mind? <k>Cancel</k>.",
       "5": "<b>Plan: box ~L12 for hards</b> is advice from your strategists. When it changes to <b>Box this lap</b>, the <k>Box</k> button flashes green and your engineer calls it on the radio. When in doubt, follow it.",
       "6": "<b>Box now → P14, 2.1 s behind ALB</b> shows where you'd rejoin if you pitted this lap (amber = straight into traffic). Below it, hints explain the fight you're in: the pass chance per lap, why you're stuck, and when an undercut is on.",
-      "7": "<b>⚡ Overtake</b> (key <k>O</k>) is the 2026 Overtake Mode: within a second of the car ahead it gives about 0.8 s for one lap and cancels the dirty air. It costs 40% of the battery, which recharges every lap (fastest in Conserve). <k>Defend</k> (key <k>D</k>) costs 25% and helps you hold off a car attacking you. The AI uses it too, so save some charge."
+      "7": "<b>⚡ Overtake</b> (key <k>O</k>) is the 2026 Overtake Mode: within a second of the car ahead it gives about 0.8 s for one lap and cancels the dirty air. It costs 40% of the battery, which recharges every lap (fastest in Conserve). <k>Defend</k> (key <k>D</k>) costs 25% and helps you hold off a car attacking you. The AI uses it too, so save some charge.",
+      "8": "<b>Radio requests.</b> Drivers ask for things themselves: \"Tyres are finished, box this lap?\", \"I'm faster, let me through!\", \"Can I push?\". A blue box appears on their card: answer <k>Yes</k> or <k>No</k> (keys <k>Y</k> / <k>N</k>) before the bar runs out."
     },
     "decisions": {
       "title": "The decisions that win races",
@@ -510,7 +521,8 @@
     },
     "results": {
       "title": "Results",
-      "body": "After the chequered flag you get a grade from <b>S</b> (brilliant) to <b>D</b> (one to forget). It depends on whether you met the team objective, how your cars finished compared with what the car deserved, and bonuses like a podium or the fastest lap. A Williams in 9th is a great result; a Mercedes in 9th is not."
+      "body": "After the chequered flag you get a grade from <b>S</b> (brilliant) to <b>D</b> (one to forget). It depends on whether you met the team objective, how your cars finished compared with what the car deserved, and bonuses like a podium or the fastest lap. A Williams in 9th is a great result; a Mercedes in 9th is not.",
+      "moments": "After the flag, <b>Key moments</b> lists what decided your race: undercuts that worked or were missed, ⚡ chances, stops under the Safety Car, tyres run too long."
     },
     "keys": {
       "title": "Keyboard shortcuts",
@@ -519,7 +531,8 @@
       "box": "Box the selected car this lap (press again to cancel)",
       "car": "Select your first / second car",
       "esc": "Close a pop-up and carry on",
-      "boost": "Overtake Mode / Defend for the selected car"
+      "boost": "Overtake Mode / Defend for the selected car",
+      "answer": "Answer a driver's radio request: Yes / No"
     },
     "first": {
       "title": "Your first race in one minute",
@@ -553,5 +566,39 @@
     "tipCharge": "Charge the battery for a ⚡ attack (Conserve charges fastest)",
     "tipDefendBoost": "Press Defend to hold them off",
     "tipSwap": "Faster than your teammate? Use the Swap team order"
+  },
+  "radioRequest": {
+    "box": "Tyres are finished! Box this lap?",
+    "through": "I'm faster than {car}. Let me through!",
+    "push": "I can get {car}. Can I push?",
+    "pushDefend": "{car} is all over me. Can I push?",
+    "rain": "It's getting slippery out here. Inters?",
+    "yes": {
+      "box": "OK, box this lap.",
+      "through": "Copy. {car}, let him through, please.",
+      "push": "Push now, push!",
+      "rain": "OK, box for inters."
+    },
+    "no": {
+      "box": "Negative, stay out, stay out.",
+      "through": "Negative, hold position.",
+      "push": "Negative, look after the tyres.",
+      "rain": "Stay out, it's not wet enough yet."
+    }
+  },
+  "moments": {
+    "overtake": "{car} passed {rival}{boosted, select, yes { with ⚡ Overtake Mode} other {}}",
+    "boostMissed": "{car} had a ~{chance}% ⚡ shot at {rival} and didn't take it",
+    "undercutWon": "The undercut on {rival} worked: {car} came out ahead",
+    "undercutFailed": "The undercut on {rival} didn't work: {car} stayed behind",
+    "undercutMissed": "{car} could have undercut {rival} (~{gain} s)",
+    "scStop": "{car} pitted under the Safety Car: a cheap stop",
+    "scMissed": "{car} stayed out under the Safety Car with a stop due soon",
+    "tyresTooLong": "{car}'s tyres reached {wear}% wear: box earlier next time",
+    "goodStart": "{car} gained {places, plural, one {# place} other {# places}} at the start",
+    "badStart": "{car} lost {places, plural, one {# place} other {# places}} at the start",
+    "puncture": "{car} got a puncture",
+    "dsq": "{car} was disqualified: two dry compounds are mandatory",
+    "defended": "{car} held off {rival} with Defend"
   }
 }

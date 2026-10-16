@@ -3,6 +3,8 @@ import { createRace } from "@/engine";
 import { describe, expect, it } from "vitest";
 import { alertFor } from "./alerts";
 import { boxCalls, carInsights, pitWindow } from "./insights";
+import { MomentLog } from "./moments";
+import { RadioRequests } from "./radio-requests";
 import { describeEvent } from "./event-text";
 import type { Msg } from "./messages";
 import { gradeRace, teamObjective } from "./objective";
@@ -55,6 +57,8 @@ describe("translations", () => {
       for (const car of race.cars.filter((c) => c.isPlayer))
         produced.push(suggestedStart(race, car).summary);
       const said = new Set<string>();
+      const requests = new RadioRequests();
+      const log = new MomentLog("mclaren");
       while (!race.finished) {
         for (const event of race.step()) {
           const control = describeEvent(race, event);
@@ -73,6 +77,11 @@ describe("translations", () => {
               if (race.canBoost(car, kind))
                 race.command({ type: "boost", driverId: car.driverId, kind });
           produced.push(...boxCalls(race, "mclaren", said));
+          for (const r of requests.update(race, "mclaren")) {
+            produced.push(r.message, r.yesReply, r.noReply);
+            requests.answer(r.id);
+          }
+          log.observe(race);
           for (const car of race.cars) {
             for (const insight of carInsights(race, car))
               produced.push(
@@ -84,6 +93,7 @@ describe("translations", () => {
           }
         }
       }
+      produced.push(...log.finish(race).map((m) => m.message));
       const report = gradeRace(race, "mclaren");
       produced.push(
         report.objective.text,
@@ -129,5 +139,36 @@ describe("translations", () => {
     };
     expect(tr(message, "en")).toBe("NOR pits for hards");
     expect(tr(message, "uk")).toBe("NOR заїжджає в бокси, шини: жорсткі");
+  });
+});
+
+describe("request and moment texts", () => {
+  it("renders every one in both languages", () => {
+    const values = {
+      car: "NOR",
+      rival: "LEC",
+      chance: 35,
+      gain: "1.2",
+      wear: 88,
+      places: 3,
+      boosted: "yes",
+    };
+    const leaves = (obj: object, prefix: string): string[] =>
+      Object.entries(obj).flatMap(([k, v]) =>
+        typeof v === "object" ? leaves(v, `${prefix}${k}.`) : [`${prefix}${k}`],
+      );
+    const keys = [
+      ...leaves(MESSAGES.en.moments, "moments."),
+      ...leaves(MESSAGES.en.radioRequest, "radioRequest."),
+    ];
+    expect(keys.length).toBeGreaterThan(20);
+    for (const key of keys)
+      for (const locale of ["en", "uk"] as const) {
+        const text = tr({ key, values }, locale);
+        expect(text, `${locale}: ${key}`).not.toMatch(/[{}]/);
+      }
+    expect(tr({ key: "moments.goodStart", values }, "uk")).toContain(
+      "3 позиції",
+    );
   });
 });

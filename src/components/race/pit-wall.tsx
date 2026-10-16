@@ -3,6 +3,7 @@
 import { RemoteImage } from "@/components/remote-image";
 import { getTeamImage } from "@/data/images";
 import type { Race, RaceCommand, TeamOrder } from "@/engine";
+import type { RadioRequest } from "@/game/radio-requests";
 import { cn } from "@/lib/utils";
 import { useTranslations } from "next-intl";
 import { PlayerCarCard } from "./player-car-card";
@@ -16,12 +17,16 @@ export function PitWall({
   selectedDriverId,
   onSelect,
   onCommand,
+  requests,
+  onAnswer,
 }: {
   race: Race;
   teamId: string;
   selectedDriverId: string | null;
   onSelect: (driverId: string) => void;
   onCommand: (command: RaceCommand) => void;
+  requests: readonly RadioRequest[];
+  onAnswer: (id: string, yes: boolean) => void;
 }) {
   const t = useTranslations("pitWall");
   const team = race.config.teams.find((x) => x.id === teamId)!;
@@ -60,6 +65,8 @@ export function PitWall({
           selected={car.driverId === selectedDriverId}
           onSelect={() => onSelect(car.driverId)}
           onCommand={onCommand}
+          request={requests.find((r) => r.driverId === car.driverId)}
+          onAnswer={onAnswer}
         />
       ))}
 

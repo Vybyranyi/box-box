@@ -6,7 +6,17 @@ import { SPEEDS, type Speed } from "@/game/race-runner";
 import { Link } from "@/i18n/navigation";
 import { formatRaceTime } from "@/lib/format";
 import { cn } from "@/lib/utils";
-import { CircleHelp, CloudRain, Pause, Play, Sun } from "lucide-react";
+import {
+  CircleHelp,
+  CloudRain,
+  Mic,
+  MicOff,
+  Pause,
+  Play,
+  Sun,
+  Volume2,
+  VolumeX,
+} from "lucide-react";
 import { useTranslations } from "next-intl";
 
 const STATUS_STYLE: Record<TrackStatus | "finished", string> = {
@@ -28,6 +38,7 @@ export function RaceHeader({
   onTogglePause,
   onSpeed,
   autoPause,
+  sound,
 }: {
   trackName: string;
   circuitName: string;
@@ -41,6 +52,12 @@ export function RaceHeader({
   onSpeed: (speed: Speed) => void;
   /** Only shown when the player runs a team. */
   autoPause?: { enabled: boolean; onToggle: () => void };
+  sound: {
+    enabled: boolean;
+    voice: boolean;
+    onToggle: () => void;
+    onToggleVoice: () => void;
+  };
 }) {
   const t = useTranslations("race");
   return (
@@ -114,6 +131,27 @@ export function RaceHeader({
             {t("autoPause", { enabled: String(autoPause.enabled) })}
           </button>
         )}
+        <Button
+          variant="secondary"
+          size="icon"
+          onClick={sound.onToggle}
+          aria-pressed={sound.enabled}
+          aria-label={sound.enabled ? t("soundOff") : t("soundOn")}
+          title={sound.enabled ? t("soundOff") : t("soundOn")}
+        >
+          {sound.enabled ? <Volume2 /> : <VolumeX />}
+        </Button>
+        <Button
+          variant="secondary"
+          size="icon"
+          onClick={sound.onToggleVoice}
+          disabled={!sound.enabled}
+          aria-pressed={sound.voice}
+          aria-label={sound.voice ? t("voiceOff") : t("voiceOn")}
+          title={sound.voice ? t("voiceOff") : t("voiceOn")}
+        >
+          {sound.voice ? <Mic /> : <MicOff />}
+        </Button>
         <Button
           variant="secondary"
           size="icon"
