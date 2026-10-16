@@ -34,6 +34,7 @@ export function RaceHeader({
   speed,
   onTogglePause,
   onSpeed,
+  autoPause,
 }: {
   trackName: string;
   circuitName: string;
@@ -45,6 +46,8 @@ export function RaceHeader({
   speed: Speed;
   onTogglePause: () => void;
   onSpeed: (speed: Speed) => void;
+  /** Only shown when the player runs a team. */
+  autoPause?: { enabled: boolean; onToggle: () => void };
 }) {
   const s = STATUS[status];
   return (
@@ -84,6 +87,22 @@ export function RaceHeader({
       </span>
 
       <div className="ml-auto flex items-center gap-2">
+        {autoPause && (
+          <button
+            type="button"
+            onClick={autoPause.onToggle}
+            aria-pressed={autoPause.enabled}
+            title="Pause automatically on Safety Cars, rain and tyre warnings"
+            className={cn(
+              "rounded-lg px-2.5 py-1.5 text-xs font-semibold transition-colors",
+              autoPause.enabled
+                ? "bg-amber-400/20 text-amber-300"
+                : "bg-muted text-muted-foreground",
+            )}
+          >
+            Auto-pause {autoPause.enabled ? "on" : "off"}
+          </button>
+        )}
         <Button
           variant="secondary"
           size="icon"

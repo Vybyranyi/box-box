@@ -161,11 +161,13 @@ export type RaceEvent =
   | { type: "green" }
   | { type: "rain-start" }
   | { type: "rain-stop" }
+  /** The conditions now call for a different kind of tyre. */
+  | { type: "crossover"; to: "dry" | "intermediate" | "wet" }
   | { type: "crash"; car: number }
   | { type: "mechanical"; car: number }
   | { type: "puncture"; car: number }
   | { type: "tyre-warning"; car: number; wear: number }
-  | { type: "fastest-lap"; car: number; time: number }
+  | { type: "fastest-lap"; car: number; lapTime: number }
   | { type: "team-order"; teamId: string; order: TeamOrder }
   | { type: "chequered-flag" }
   | { type: "finished"; car: number; position: number }

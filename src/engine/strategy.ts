@@ -30,7 +30,8 @@ type PlanInput = {
   usedCompounds: Compound[];
   /** Tyre currently fitted, if the plan continues an ongoing stint rather than starting fresh. */
   current?: { compound: DryCompound; wear: number };
-  rng: Rng;
+  /** Picks among near-optimal plans at random; without it, the best plan is returned. */
+  rng?: Rng;
 };
 
 type Candidate = {
@@ -167,8 +168,10 @@ export function planStrategy(input: PlanInput): StrategyPlan {
     };
   }
 
-  // Softmax over candidates within a few seconds of the best.
   const bestTime = Math.min(...finite.map((c) => c.time));
+  if (!rng) return { stints: finite.find((c) => c.time === bestTime)!.stints };
+
+  // Softmax over candidates within a few seconds of the best.
   const pool = finite.filter((c) => c.time - bestTime < 3);
   const weights = pool.map((c) => Math.exp(-(c.time - bestTime) / 1.0));
   let pick = rng.next() * weights.reduce((s, w) => s + w, 0);

@@ -31,6 +31,7 @@ import type {
   RaceConfig,
   RaceEvent,
   SafetyCarState,
+  StrategyPlan,
   TeamOrder,
   TimedEvent,
   WeatherState,
@@ -101,6 +102,7 @@ export class Race {
   private stoppedUnder: number[];
   private tyreWarned: boolean[];
   private raining = false;
+  private idealTyre: "dry" | "intermediate" | "wet" = "dry";
   /** Cars letting a teammate through on a team order. */
   private yielding = new Set<number>();
   private newEvents: TimedEvent[] = [];
@@ -129,6 +131,7 @@ export class Race {
     );
     this.weather = initialWeather(timeline);
     this.raining = this.weather.rain > 0.05;
+    this.idealTyre = idealCompoundFor(this.weather.wetness);
 
     // Expected crashes per race chosen so P(at least one SC) matches the track's history. The
     // divisor accounts for the average of the risk multipliers (lap 1, rain, weaker drivers)
@@ -265,6 +268,33 @@ export class Race {
 
   team(car: CarState): Team {
     return this.teamOf[car.index];
+  }
+
+  /** Green-flag tyre wear in % per lap for this car at the current conditions and pace mode. */
+  wearRate(car: CarState): number {
+    return this.currentWearRate(car, false);
+  }
+
+  /**
+   * The best dry strategy for this car from now on, for advising the player. With `fromScratch`
+   * it plans the whole race including the starting tyre (before the start).
+   */
+  suggestStrategy(car: CarState, fromScratch = false): StrategyPlan {
+    const current =
+      !fromScratch && isDry(car.tyre.compound)
+        ? { compound: car.tyre.compound, wear: car.tyre.wear }
+        : undefined;
+    return planStrategy({
+      fromLap: car.lap,
+      totalLaps: this.laps,
+      wearRates: this.wearRates[car.index],
+      referenceLap: this.refLap,
+      pitLaneLoss: this.track.pitLaneLossSeconds,
+      overtakingDifficulty: this.track.overtakingDifficulty,
+      requireTwoCompounds: this.requireTwoCompounds,
+      usedCompounds: fromScratch ? [] : car.usedCompounds,
+      current,
+    });
   }
 
   carByDriver(driverId: string): CarState | undefined {
@@ -446,6 +476,11 @@ export class Race {
     } else if (this.raining && this.weather.rain < 0.03) {
       this.raining = false;
       this.emit({ type: "rain-stop" });
+    }
+    const ideal = idealCompoundFor(this.weather.wetness);
+    if (ideal !== this.idealTyre) {
+      this.idealTyre = ideal;
+      this.emit({ type: "crossover", to: ideal });
     }
   }
 
@@ -669,16 +704,17 @@ export class Race {
     }
   }
 
-  private currentWearRate(car: CarState) {
+  private currentWearRate(
+    car: CarState,
+    neutralised = this.safetyCar.status !== "green",
+  ) {
     const driver = this.driverOf[car.index];
     return wearPerLap({
       compound: car.tyre.compound,
       tyreDegradation: this.track.tyreDegradation,
       carTyreWear: this.teamOf[car.index].car.tyreWear,
       tyreManagement: driver.ratings.tyreManagement,
-      paceModeWear:
-        PACE_MODE[car.paceMode].wear *
-        (this.safetyCar.status === "green" ? 1 : 0.4),
+      paceModeWear: PACE_MODE[car.paceMode].wear * (neutralised ? 0.4 : 1),
       wetness: this.weather.wetness,
     });
   }
@@ -711,7 +747,7 @@ export class Race {
       car.bestLapTime = lapTime;
     if (car.lap > 1 && (!this.fastestLap || lapTime < this.fastestLap.time)) {
       this.fastestLap = { car: car.index, time: lapTime, lap: car.lap };
-      this.emit({ type: "fastest-lap", car: car.index, time: lapTime });
+      this.emit({ type: "fastest-lap", car: car.index, lapTime });
     }
 
     if (car.lap > this.leaderLap) {

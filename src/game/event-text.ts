@@ -14,15 +14,24 @@ export type FeedItem = {
   lap: number;
   text: string;
   tone: "info" | "warning" | "danger" | "good";
+  /** Race control announcements vs team radio. */
+  kind: "control" | "radio";
+  /** Radio speaker: a driver code or "Engineer". */
+  from?: string;
+  /** Speaker's team colour. */
+  color?: string;
 };
 
 /** Human-readable line for the race feed, or null for events not worth showing. */
 export function describeEvent(race: Race, event: TimedEvent): FeedItem | null {
   const item = describe(race, event);
-  return item ? { ...item, id: event.seq } : null;
+  return item ? { ...item, id: event.seq * 2, kind: "control" } : null;
 }
 
-function describe(race: Race, event: TimedEvent): Omit<FeedItem, "id"> | null {
+function describe(
+  race: Race,
+  event: TimedEvent,
+): Omit<FeedItem, "id" | "kind"> | null {
   const code = (i: number) => race.cars[i].code;
   // event.lap counts completed laps; show the lap being raced.
   const lap = Math.min(event.lap + 1, race.laps);
@@ -77,7 +86,7 @@ function describe(race: Race, event: TimedEvent): Omit<FeedItem, "id"> | null {
       return lap > 1
         ? {
             lap,
-            text: `Fastest lap: ${code(event.car)} ${formatLapTime(event.time)}`,
+            text: `Fastest lap: ${code(event.car)} ${formatLapTime(event.lapTime)}`,
             tone: "good",
           }
         : null;

@@ -52,7 +52,8 @@ export class RaceRunner {
     if (this.paused || this.race.finished) return 0;
     this.accumulator += Math.min(realSeconds, MAX_FRAME_SECONDS) * this.speed;
     let steps = 0;
-    while (this.accumulator >= DT && !this.race.finished) {
+    // Re-check `paused` every step: a listener may pause the race mid-frame (auto-pause).
+    while (this.accumulator >= DT && !this.race.finished && !this.paused) {
       this.snapshot();
       const events = this.race.step();
       if (events.length) for (const l of this.listeners) l(events);
