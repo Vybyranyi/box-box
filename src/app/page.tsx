@@ -1,7 +1,8 @@
+import { HomeActions } from "@/components/home/home-actions";
+import { RecentRaces } from "@/components/home/recent-races";
 import { Badge } from "@/components/ui/badge";
-import { buttonVariants } from "@/components/ui/button";
-import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { meta } from "@/data";
 
 const features = [
   {
@@ -20,13 +21,13 @@ const features = [
 
 export default function Home() {
   return (
-    <main className="mx-auto flex w-full max-w-5xl flex-1 flex-col justify-center gap-16 px-6 py-16">
+    <main className="mx-auto flex w-full max-w-5xl flex-1 flex-col justify-center gap-14 px-6 py-16">
       <section className="flex flex-col items-start gap-6">
         <Badge
           variant="secondary"
           className="font-mono tracking-widest uppercase"
         >
-          Pre-season testing
+          {meta.season} season
         </Badge>
         <h1 className="text-6xl font-black tracking-tight uppercase italic sm:text-8xl">
           Box <span className="text-primary">Box</span>
@@ -35,13 +36,10 @@ export default function Home() {
           Run the pit wall. Pick a team, read the race and make the strategy
           calls that win or lose it.
         </p>
-        <Link
-          href="/race?team=mclaren"
-          className={buttonVariants({ size: "lg" })}
-        >
-          Watch a race (preview)
-        </Link>
+        <HomeActions />
       </section>
+
+      <RecentRaces />
 
       <section className="grid gap-4 sm:grid-cols-3">
         {features.map((feature) => (

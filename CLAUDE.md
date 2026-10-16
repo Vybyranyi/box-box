@@ -30,7 +30,8 @@ Driver headshots, team logos and car renders come from the formula1.com CDN, and
 - `src/engine/` - race simulation in pure TypeScript. Must not import React, Next or anything browser-specific. Deterministic: the same seed and the same player decisions always produce the same race.
 - `src/data/` - generated JSON (teams, drivers, tracks, calendar), committed to the repo. Import it through `src/data/index.ts`. Never edit the JSON by hand: change `scripts/curated/*` or the script and run `npm run data`.
 - `src/game/` - glue between engine and UI, no React: `RaceRunner` (real time → engine steps, position interpolation), `TrackRenderer` (Canvas 2D), timing tower rows, feed text.
-- `src/app/`, `src/components/` - UI. The map redraws every animation frame outside React; the HUD re-renders about 4×/s. `/race?track=&seed=&team=&laps=&weather=` runs a race.
+- `src/app/`, `src/components/` - UI. The map redraws every animation frame outside React; the HUD re-renders about 4×/s. Flow: `/` → `/play` (team, then race setup) → `/qualifying?…` → `/race?…` (results overlay at the chequered flag). The same query (`track`, `team`, `laps`, `weather`, `seed`) is passed along, so qualifying and race build the identical race.
+- Per-browser state (settings, race history) lives in localStorage via `useStored` in `src/lib/storage.ts`; never read storage during render any other way.
 - `scripts/` - data collection scripts (Jolpica, OpenF1, `bacinger/f1-circuits` GeoJSON), run manually with `tsx`. The Vercel build never calls external APIs.
 
 ## Race engine

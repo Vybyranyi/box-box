@@ -9,6 +9,10 @@ import type {
   WeatherMode,
 } from "@/engine";
 import { alertFor, type RaceAlert } from "@/game/alerts";
+import { saveToHistory } from "@/game/history";
+import { gradeRace } from "@/game/objective";
+import { DEFAULT_SETTINGS, type Settings } from "@/game/race-options";
+import { useStored } from "@/lib/storage";
 import { describeEvent, type FeedItem } from "@/game/event-text";
 import { recommendedCompound } from "@/game/pit-wall";
 import { radioFor } from "@/game/radio";
@@ -27,6 +31,7 @@ import { RaceAlertBanner } from "./race-alert";
 import { RaceFeed } from "./race-feed";
 import { RaceHeader } from "./race-header";
 import { FastestLap, RaceInfo } from "./race-info";
+import { RaceResults } from "./race-results";
 import { StartOverlay } from "./start-overlay";
 import { TimingTower } from "./timing-tower";
 import { TrackMap } from "./track-map";
@@ -92,7 +97,13 @@ export function RaceView({ setup }: { setup: RaceSetup }) {
   const [, setFrame] = useState(0);
   const [paused, setPaused] = useState(false);
   const [speed, setSpeed] = useState<Speed>(1);
-  const [autoPause, setAutoPause] = useState(true);
+  const [settings, setSettings] = useStored<Settings>(
+    "settings",
+    DEFAULT_SETTINGS,
+  );
+  const autoPause = settings.autoPause;
+  const [showResults, setShowResults] = useState(false);
+  const finishHandled = useRef(false);
   const [alert, setAlert] = useState<RaceAlert | null>(null);
   const [selected, setSelected] = useState<string>(() => {
     const own = race.cars
@@ -127,6 +138,37 @@ export function RaceView({ setup }: { setup: RaceSetup }) {
   });
   useEffect(() => runner.onEvents((events) => onRaceEvents(events)), [runner]);
 
+  // Chequered flag: grade the race, store it in the history and show the results.
+  const onFinished = useEffectEvent(() => {
+    if (teamId) {
+      const report = gradeRace(race, teamId);
+      saveToHistory({
+        id: `${setup.seed}-${setup.trackId}-${teamId}-${race.laps}-${setup.weather}`,
+        date: new Date().toISOString(),
+        trackId: setup.trackId,
+        teamId,
+        laps: race.laps,
+        weather: setup.weather,
+        seed: setup.seed,
+        grade: report.grade,
+        score: report.score,
+        points: report.points,
+        objective: report.objective.text,
+        met: report.met,
+        finishes: report.results.map((r) => ({
+          code: r.code,
+          result:
+            r.status === "dnf"
+              ? "DNF"
+              : r.status === "dsq"
+                ? "DSQ"
+                : `P${r.position}`,
+        })),
+      });
+    }
+    setShowResults(true);
+  });
+
   useEffect(() => {
     let raf = 0;
     let last = performance.now();
@@ -135,6 +177,10 @@ export function RaceView({ setup }: { setup: RaceSetup }) {
       runner.advance((now - last) / 1000);
       last = now;
       drawRef.current?.();
+      if (runner.race.finished && !finishHandled.current) {
+        finishHandled.current = true;
+        onFinished();
+      }
       if (now - lastUi > UI_REFRESH_MS || pendingAlert.current) {
         lastUi = now;
         if (pendingFeed.current.length) {
@@ -288,7 +334,11 @@ export function RaceView({ setup }: { setup: RaceSetup }) {
         onSpeed={changeSpeed}
         autoPause={
           teamId
-            ? { enabled: autoPause, onToggle: () => setAutoPause((a) => !a) }
+            ? {
+                enabled: autoPause,
+                onToggle: () =>
+                  setSettings({ ...settings, autoPause: !autoPause }),
+              }
             : undefined
         }
       />
@@ -314,6 +364,15 @@ export function RaceView({ setup }: { setup: RaceSetup }) {
               onCommand={issueCommand}
               onDismiss={dismissAlert}
             />
+          )}
+          {race.finished && !showResults && (
+            <button
+              type="button"
+              onClick={() => setShowResults(true)}
+              className="absolute top-3 left-1/2 z-10 -translate-x-1/2 rounded-lg bg-primary px-4 py-2 text-sm font-bold text-primary-foreground uppercase shadow-lg"
+            >
+              Race results
+            </button>
           )}
           {paused && !alert && started && !race.finished && (
             <p className="absolute top-3 left-1/2 -translate-x-1/2 rounded-md bg-background/90 px-3 py-1 font-mono text-xs font-bold uppercase">
@@ -346,6 +405,13 @@ export function RaceView({ setup }: { setup: RaceSetup }) {
           </div>
         </aside>
       </div>
+      {showResults && (
+        <RaceResults
+          race={race}
+          teamId={teamId}
+          onClose={() => setShowResults(false)}
+        />
+      )}
     </main>
   );
 }

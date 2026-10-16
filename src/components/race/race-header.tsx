@@ -6,6 +6,7 @@ import { SPEEDS, type Speed } from "@/game/race-runner";
 import { formatRaceTime } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { CloudRain, Pause, Play, Sun } from "lucide-react";
+import Link from "next/link";
 
 const STATUS: Record<
   TrackStatus | "finished",
@@ -52,6 +53,13 @@ export function RaceHeader({
   const s = STATUS[status];
   return (
     <header className="flex flex-wrap items-center gap-x-6 gap-y-2 rounded-xl border bg-card px-4 py-2.5">
+      <Link
+        href="/"
+        className="text-sm font-black text-muted-foreground uppercase italic hover:text-foreground"
+        title="Back to the home page"
+      >
+        Box <span className="text-primary">Box</span>
+      </Link>
       <div className="min-w-0">
         <h1 className="truncate text-lg leading-tight font-black uppercase italic">
           {trackName}
