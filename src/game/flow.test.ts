@@ -98,6 +98,7 @@ describe("race options and URLs", () => {
       teamId: "ferrari",
       laps: 11,
       weather: "wet",
+      difficulty: "hard",
       seed: 42,
     });
     const parsed = parseRaceParams(
@@ -108,6 +109,7 @@ describe("race options and URLs", () => {
       teamId: "ferrari",
       laps: 11,
       weather: "wet",
+      difficulty: "hard",
       seed: 42,
     });
     expect(new URLSearchParams(withSeed(parsed, 7)).get("seed")).toBe("7");
@@ -126,6 +128,7 @@ describe("race options and URLs", () => {
       teamId: null,
       laps: undefined,
       weather: "auto",
+      difficulty: "normal",
       seed: null,
     });
     expect(parseRaceParams({ track: "monaco", laps: "999" }).laps).toBe(

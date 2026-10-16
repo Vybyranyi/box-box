@@ -6,6 +6,7 @@ import { calendar, getTrack, meta, teams } from "@/data";
 import { teamObjective, teamRanking } from "@/game/objective";
 import {
   DEFAULT_SETTINGS,
+  DIFFICULTIES,
   DISTANCES,
   lapsFor,
   newSeed,
@@ -51,7 +52,10 @@ export function SetupWizard() {
   const track = getTrack(trackId);
   const trackName = tTracks(trackId as never);
   const laps = lapsFor(track, settings.distance);
-  const objective = team ? teamObjective(teams, track, team.id) : null;
+  const difficulty = settings.difficulty ?? "normal";
+  const objective = team
+    ? teamObjective(teams, track, team.id, difficulty)
+    : null;
   const trackRank = team
     ? teamRanking(teams, track).findIndex((x) => x.id === team.id) + 1
     : null;
@@ -66,7 +70,7 @@ export function SetupWizard() {
     if (!team) return;
     update({ trackId });
     router.push(
-      `/qualifying?${raceQuery({ trackId, teamId: team.id, laps, weather: settings.weather, seed: newSeed() })}`,
+      `/qualifying?${raceQuery({ trackId, teamId: team.id, laps, weather: settings.weather, difficulty, seed: newSeed() })}`,
     );
   };
 
@@ -209,6 +213,33 @@ export function SetupWizard() {
                   </button>
                 ))}
               </div>
+            </section>
+
+            <section className="flex flex-col gap-2 rounded-xl border bg-card p-4">
+              <h2 className="text-xs font-semibold text-muted-foreground uppercase">
+                {t("difficulty")}
+              </h2>
+              <div className="grid grid-cols-3 gap-1.5">
+                {DIFFICULTIES.map((id) => (
+                  <button
+                    key={id}
+                    type="button"
+                    onClick={() => update({ difficulty: id })}
+                    aria-pressed={difficulty === id}
+                    className={cn(
+                      "rounded-lg border px-2 py-1.5 text-sm font-semibold transition-colors",
+                      difficulty === id
+                        ? "border-primary bg-primary/10"
+                        : "hover:bg-muted",
+                    )}
+                  >
+                    {t(`difficulties.${id}.label`)}
+                  </button>
+                ))}
+              </div>
+              <p className="text-[11px] text-muted-foreground">
+                {t(`difficulties.${difficulty}.detail`)}
+              </p>
             </section>
 
             {objective && team && (

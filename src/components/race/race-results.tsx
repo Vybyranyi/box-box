@@ -42,7 +42,7 @@ export function RaceResults({
   const again = () => {
     if (!teamId) return;
     router.push(
-      `/qualifying?${raceQuery({ trackId: race.track.id, teamId, laps: race.laps, weather: race.config.weather ?? "auto", seed: newSeed() })}`,
+      `/qualifying?${raceQuery({ trackId: race.track.id, teamId, laps: race.laps, weather: race.config.weather ?? "auto", difficulty: race.config.difficulty ?? "normal", seed: newSeed() })}`,
     );
   };
 

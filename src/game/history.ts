@@ -1,4 +1,4 @@
-import type { WeatherMode } from "@/engine";
+import type { Difficulty, WeatherMode } from "@/engine";
 import { readStored, writeStored } from "@/lib/storage";
 import type { Grade } from "./objective";
 
@@ -12,6 +12,8 @@ export type HistoryEntry = {
   teamId: string;
   laps: number;
   weather: WeatherMode;
+  /** Missing in entries saved before difficulty levels existed. */
+  difficulty?: Difficulty;
   seed: number;
   grade: Grade;
   score: number;

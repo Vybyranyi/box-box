@@ -151,6 +151,7 @@ describe("race", () => {
       race,
       () =>
         race.leaderLap >= 3 &&
+        race.trackStatus === "green" &&
         norris.position === piastri.position + 1 &&
         norris.interval !== null &&
         norris.interval < 2.5,
@@ -242,7 +243,9 @@ describe("pit wall estimates", () => {
         if (lap < 2) continue;
         for (const car of race.cars) {
           const battle = race.battle(car);
-          if (!battle || battle.gap > 1) continue;
+          // Calibrate the plain pass model; Overtake Mode is tested separately.
+          if (!battle || battle.gap > 1 || car.boost) continue;
+          if (race.cars[battle.ahead].boost) continue;
           expect(battle.paceDelta).toBeCloseTo(
             race.expectedLap(race.cars[battle.ahead]) - race.expectedLap(car),
           );
@@ -261,5 +264,162 @@ describe("pit wall estimates", () => {
     runUntil(race, () => race.cars.some((c) => race.battle(c)));
     expect(race.trackStatus).toBe("green");
     expect(race.battle(race.cars[race.order[0]])).toBeNull();
+  });
+});
+
+describe("Overtake Mode", () => {
+  const silverstone = getTrack("silverstone");
+  const playerRace = (seed: number, extra: Partial<RaceConfig> = {}) =>
+    createRace({
+      ...base,
+      seed,
+      track: silverstone,
+      laps: 26,
+      playerTeamId: "alpine",
+      ...extra,
+    });
+
+  it("can only be used close to another car, under green, with enough charge", () => {
+    const race = playerRace(3);
+    const car = race.cars.find((c) => c.isPlayer)!;
+    expect(race.canBoost(car, "attack")).toBe(false); // lap 0
+    runUntil(race, () => race.canBoost(car, "attack"));
+    expect(race.trackStatus).toBe("green");
+    expect(race.battle(car)!.gap).toBeLessThanOrEqual(1.1);
+    car.battery = 10;
+    expect(race.canBoost(car, "attack")).toBe(false);
+  });
+
+  it("spends charge, lasts about a lap and recharges by pace mode", () => {
+    const race = playerRace(3);
+    const car = race.cars.find((c) => c.isPlayer)!;
+    runUntil(race, () => race.canBoost(car, "attack"));
+    const before = car.battery;
+    race.command({ type: "boost", driverId: car.driverId, kind: "attack" });
+    const events = race.step();
+    expect(events.some((e) => e.type === "boost" && e.car === car.index)).toBe(
+      true,
+    );
+    expect(car.battery).toBe(before - 40);
+    expect(car.boost?.kind).toBe("attack");
+    const startedLap = car.lap;
+    runUntil(race, () => car.boost === null);
+    expect(car.lap - startedLap).toBeLessThanOrEqual(1);
+
+    race.command({ type: "pace", driverId: car.driverId, mode: "conserve" });
+    const lap = car.lap;
+    const charge = car.battery;
+    runUntil(race, () => car.lap > lap + 1);
+    expect(car.battery).toBeGreaterThanOrEqual(Math.min(100, charge + 15));
+  });
+
+  it("raises the pass chance and wins places when used well", () => {
+    let withBoost = 0;
+    let without = 0;
+    for (let seed = 1; seed <= 12; seed++) {
+      for (const use of [true, false]) {
+        const race = playerRace(seed);
+        const mine = race.cars.filter((c) => c.isPlayer);
+        while (!race.finished) {
+          if (use)
+            for (const car of mine)
+              if (
+                race.canBoost(car, "attack") &&
+                race.battle(car, { attack: true })!.passChance >
+                  race.battle(car)!.passChance
+              )
+                race.command({
+                  type: "boost",
+                  driverId: car.driverId,
+                  kind: "attack",
+                });
+          for (const e of race.step())
+            if (e.type === "overtake" && race.cars[e.car].isPlayer) {
+              if (use) withBoost++;
+              else without++;
+            }
+        }
+      }
+    }
+    expect(withBoost).toBeGreaterThan(without * 1.2);
+  });
+
+  it("is used by AI cars too, but sparingly", () => {
+    const race = createRace({ ...base, seed: 5, track: silverstone });
+    race.run();
+    const boosts = race.events.filter((e) => e.type === "boost").length;
+    expect(boosts).toBeGreaterThan(5);
+    expect(boosts).toBeLessThan(150);
+    expect(race.cars.every((c) => c.battery >= 0 && c.battery <= 100)).toBe(
+      true,
+    );
+  });
+});
+
+describe("difficulty", () => {
+  it("gives the player a slightly faster car on Easy", () => {
+    let easy = 0;
+    let normal = 0;
+    for (let seed = 1; seed <= 20; seed++) {
+      for (const difficulty of ["easy", "normal"] as const) {
+        const race = createRace({
+          ...base,
+          seed,
+          playerTeamId: "williams",
+          difficulty,
+        });
+        const grid = race.cars
+          .filter((c) => c.isPlayer)
+          .reduce((s, c) => s + c.gridPosition, 0);
+        if (difficulty === "easy") easy += grid;
+        else normal += grid;
+      }
+    }
+    expect(easy).toBeLessThan(normal);
+  });
+
+  it("makes AI teams answer an undercut on Hard", () => {
+    const answered = { normal: 0, hard: 0 };
+    for (const difficulty of ["normal", "hard"] as const) {
+      for (let seed = 1; seed <= 15; seed++) {
+        const race = createRace({
+          ...base,
+          seed,
+          track: getTrack("silverstone"),
+          laps: 30,
+          playerTeamId: "alpine",
+          difficulty,
+        });
+        const mine = race.cars.filter((c) => c.isPlayer);
+        const watch: { rival: number; lap: number }[] = [];
+        while (!race.finished) {
+          for (const car of mine) {
+            const rival = race.cars[race.order[car.position - 2]];
+            if (
+              car.status === "racing" &&
+              !car.pitRequest &&
+              car.lap >= 6 &&
+              car.pitStops.length === 0 &&
+              rival?.ai &&
+              car.interval !== null &&
+              car.interval < 2
+            ) {
+              race.command({
+                type: "pit",
+                driverId: car.driverId,
+                compound: "hard",
+              });
+              watch.push({ rival: rival.index, lap: car.lap });
+            }
+          }
+          race.step();
+        }
+        for (const w of watch) {
+          const stop = race.cars[w.rival].pitStops.find((s) => s.lap > w.lap);
+          if (stop && stop.lap <= w.lap + 2) answered[difficulty]++;
+        }
+      }
+    }
+    expect(answered.hard).toBeGreaterThan(answered.normal);
   });
 });

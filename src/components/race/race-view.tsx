@@ -6,6 +6,7 @@ import type {
   Race,
   RaceCommand,
   TimedEvent,
+  Difficulty,
   WeatherMode,
 } from "@/engine";
 import { alertFor, type RaceAlert } from "@/game/alerts";
@@ -45,6 +46,7 @@ export type RaceSetup = {
   playerTeamId: string | null;
   laps?: number;
   weather: WeatherMode;
+  difficulty: Difficulty;
 };
 
 /** How often the React side (tower, panels) refreshes; the map redraws every frame. */
@@ -63,6 +65,7 @@ function createRunner(
     weather: setup.weather,
     playerTeamId: setup.playerTeamId,
     startingTyres,
+    difficulty: setup.difficulty,
   });
 }
 
@@ -154,12 +157,13 @@ export function RaceView({ setup }: { setup: RaceSetup }) {
     if (teamId) {
       const report = gradeRace(race, teamId);
       saveToHistory({
-        id: `${setup.seed}-${setup.trackId}-${teamId}-${race.laps}-${setup.weather}`,
+        id: `${setup.seed}-${setup.trackId}-${teamId}-${race.laps}-${setup.weather}-${setup.difficulty}`,
         date: new Date().toISOString(),
         trackId: setup.trackId,
         teamId,
         laps: race.laps,
         weather: setup.weather,
+        difficulty: setup.difficulty,
         seed: setup.seed,
         grade: report.grade,
         score: report.score,
@@ -305,6 +309,14 @@ export function RaceView({ setup }: { setup: RaceSetup }) {
           type: "pit",
           driverId: car.driverId,
           compound: recommendedCompound(race, car),
+        });
+    } else if ((e.code === "KeyO" || e.code === "KeyD") && started) {
+      const car = playerCars.find((c) => c.driverId === selected);
+      if (car)
+        issueCommand({
+          type: "boost",
+          driverId: car.driverId,
+          kind: e.code === "KeyO" ? "attack" : "defend",
         });
     }
   });

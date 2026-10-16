@@ -3,6 +3,7 @@
 import type { TowerGap, TowerRow } from "@/game/tower";
 import { formatGap } from "@/lib/format";
 import { cn } from "@/lib/utils";
+import { Zap } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useState } from "react";
 import { TyreBadge } from "./tyre-badge";
@@ -86,6 +87,16 @@ export function TimingTower({
               />
               <span className="flex items-center gap-1 font-bold">
                 {row.code}
+                {row.boost && (
+                  <Zap
+                    className={cn(
+                      "size-3",
+                      row.boost === "attack"
+                        ? "text-yellow-300"
+                        : "text-sky-400",
+                    )}
+                  />
+                )}
                 {row.fastestLap && (
                   <span
                     className="size-1.5 rounded-full bg-[#B138DD]"

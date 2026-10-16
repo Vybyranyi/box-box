@@ -99,6 +99,16 @@ function describe(
         : null;
     case "disqualified":
       return line("disqualified", "danger", { car: code(event.car) });
+    case "boost": {
+      // Only the fights that involve the player's cars, or the feed would flood.
+      if (!race.cars[event.car].isPlayer && !race.cars[event.target].isPlayer)
+        return null;
+      return line(
+        event.kind === "attack" ? "boostAttack" : "boostDefend",
+        "info",
+        { car: code(event.car), target: code(event.target) },
+      );
+    }
     case "team-order":
       return event.order === "free"
         ? null

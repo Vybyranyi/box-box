@@ -1,5 +1,10 @@
 import type { Team, Track } from "@/data/types";
-import { carFactor, type ClassifiedResult, type Race } from "@/engine";
+import {
+  carFactor,
+  type ClassifiedResult,
+  type Difficulty,
+  type Race,
+} from "@/engine";
 import { msg, type Msg } from "./messages";
 
 export type Objective = {
@@ -33,13 +38,20 @@ const isClassified = (r: ClassifiedResult) =>
 const best = (rs: ClassifiedResult[]) =>
   Math.min(...rs.filter(isClassified).map((r) => r.position), 99);
 
-/** What the team boss expects this weekend, from how fast the car is here. */
+/**
+ * What the team boss expects this weekend, from how fast the car is here. On Easy the boss
+ * asks for one step less (as if the car were one place slower).
+ */
 export function teamObjective(
   teams: Team[],
   track: Track,
   teamId: string,
+  difficulty: Difficulty = "normal",
 ): Objective {
-  const rank = teamRanking(teams, track).findIndex((t) => t.id === teamId) + 1;
+  const carRank =
+    teamRanking(teams, track).findIndex((t) => t.id === teamId) + 1;
+  const rank =
+    difficulty === "easy" ? Math.min(carRank + 1, teams.length) : carRank;
   const expected: [number, number] = [rank * 2 - 1, rank * 2];
   const top = (n: number, key: string) => ({
     text: msg(`objective.${key}`),
@@ -64,14 +76,19 @@ export function teamObjective(
       met: (rs) => rs.every(isClassified),
     };
 
-  return { rank, expected, ...goal };
+  return { rank: carRank, expected, ...goal };
 }
 
 /** How the race went for the player's team: objective, score out of ~100, grade S–D. */
 export function gradeRace(race: Race, teamId: string): RaceReport {
   const all = race.classification();
   const results = all.filter((r) => r.teamId === teamId);
-  const objective = teamObjective(race.config.teams, race.track, teamId);
+  const objective = teamObjective(
+    race.config.teams,
+    race.track,
+    teamId,
+    race.config.difficulty,
+  );
   const met = objective.met(results);
   const points = results.reduce((s, r) => s + r.points, 0);
 

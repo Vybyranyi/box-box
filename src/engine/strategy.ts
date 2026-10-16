@@ -218,6 +218,8 @@ export type PitDecisionInput = {
   requireTwoCompounds: boolean;
   usedCompounds: Compound[];
   rng: Rng;
+  /** Scales how often a stop is taken under a neutralisation (lower = slower to react). */
+  neutralisationReaction?: number;
 };
 
 export type PitDecision =
@@ -272,7 +274,8 @@ export function decidePit(i: PitDecisionInput): PitDecision {
     const stopComing =
       nextPlanned !== undefined && i.tyreAge >= plannedStint * 0.55;
     const worthIt = nextPlanned === undefined && i.wear > 45 && remaining > 10;
-    const chance = i.trackStatus === "sc" ? 0.85 : 0.6;
+    const chance =
+      (i.trackStatus === "sc" ? 0.85 : 0.6) * (i.neutralisationReaction ?? 1);
     if ((stopComing || worthIt) && i.rng.chance(chance)) {
       return {
         pit: true,

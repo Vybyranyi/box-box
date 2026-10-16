@@ -23,6 +23,8 @@ export type TowerRow = {
   lastLap: number | null;
   bestLap: number | null;
   fastestLap: boolean;
+  /** Overtake Mode in use. */
+  boost: "attack" | "defend" | null;
 };
 
 /** What the gap column shows; the UI formats and translates it. */
@@ -87,6 +89,7 @@ export function buildTower(race: Race): TowerRow[] {
       stops: car.pitStops.length,
       state,
       gained: car.status === "retired" ? 0 : car.gridPosition - car.position,
+      boost: car.boost?.kind ?? null,
       lastLap: car.lastLapTime,
       bestLap: car.bestLapTime,
       fastestLap: race.fastestLap?.car === index,

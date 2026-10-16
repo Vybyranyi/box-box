@@ -68,6 +68,10 @@ describe("translations", () => {
           for (const car of race.cars.filter((c) => c.isPlayer))
             produced.push(planSummary(race, car));
         if (race.tick % 20 === 0) {
+          for (const car of race.cars.filter((c) => c.isPlayer))
+            for (const kind of ["attack", "defend"] as const)
+              if (race.canBoost(car, kind))
+                race.command({ type: "boost", driverId: car.driverId, kind });
           produced.push(...boxCalls(race, "mclaren", said));
           for (const car of race.cars) {
             for (const insight of carInsights(race, car))

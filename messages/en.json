@@ -129,7 +129,22 @@
     "summary": "{track} · {laps} laps · {weather}",
     "next": "Next",
     "back": "Team",
-    "qualifying": "Qualifying"
+    "qualifying": "Qualifying",
+    "difficulty": "Difficulty",
+    "difficulties": {
+      "easy": {
+        "label": "Easy",
+        "detail": "Rival strategists react slower and fight less, your cars are a little faster, the boss asks for less."
+      },
+      "normal": {
+        "label": "Normal",
+        "detail": "The balanced game: AI teams run their races like real pit walls."
+      },
+      "hard": {
+        "label": "Hard",
+        "detail": "AI teams answer your undercuts, attack more often and fight harder."
+      }
+    }
   },
   "qualifying": {
     "title": "Qualifying",
@@ -207,7 +222,14 @@
     "last": "Last",
     "best": "Best",
     "stops": "Stops",
-    "fastestLap": "Fastest lap"
+    "fastestLap": "Fastest lap",
+    "battery": "Overtake Mode battery: {battery}%",
+    "overtake": "⚡ Overtake",
+    "overtakeHint": "Overtake Mode: about 0.8 s a lap faster for one lap and no dirty air. Needs the car ahead within 1 s and 40% battery. Key O",
+    "defend": "Defend",
+    "defendHint": "Spend 25% battery to be 0.4 s faster for a lap and hold off the car behind (within 1 s). Key D",
+    "attacking": "⚡ Overtake on",
+    "defending": "Defending"
   },
   "pitWall": {
     "title": "Pit wall · {team}",
@@ -366,7 +388,9 @@
     "finished": "{car} finishes P{position}",
     "disqualified": "{car} disqualified: did not use two dry compounds",
     "teamOrderHold": "Team order: hold positions",
-    "teamOrderSwap": "Team order: swap"
+    "teamOrderSwap": "Team order: swap",
+    "boostAttack": "{car} uses Overtake Mode on {target}",
+    "boostDefend": "{car} defends against {target} with Overtake Mode"
   },
   "radio": {
     "tyreWarning": {
@@ -445,8 +469,9 @@
       "1": "On the home page press <k>Start a race</k>.",
       "2": "<b>Pick a team.</b> For your first race take a fast car like <b>Mercedes</b> or <b>McLaren</b>: it's easier to see the effect of your decisions at the front.",
       "3": "<b>Pick a circuit, distance and weather.</b> Start with <k>Sprint</k> (10 laps) and <k>Dry</k>. The box on the right shows your <b>team objective</b>, the result your bosses expect.",
-      "4": "<b>Qualifying</b> shows where your drivers start. Press <k>To the grid</k>.",
-      "5": "<b>Choose starting tyres</b> for each car (the suggestion under the driver's name is a good default), then <k>Lights out</k>."
+      "4": "<b>Difficulty.</b> <k>Easy</k> if you want to win more often: slower rival strategists, a slightly faster car and softer objectives. <k>Hard</k> if the AI should fight back.",
+      "5": "<b>Qualifying</b> shows where your drivers start. Press <k>To the grid</k>.",
+      "6": "<b>Choose starting tyres</b> for each car (the suggestion under the driver's name is a good default), then <k>Lights out</k>."
     },
     "screen": {
       "title": "Read the race screen",
@@ -462,7 +487,8 @@
       "3": "<b>Push / Balanced / Conserve</b> is the pace. Push is faster but eats tyres; Conserve is slower but they last longer.",
       "4": "<b>The five circles</b> choose the tyre for the next stop, and <k>Box</k> calls the car in. It pits when it next crosses the start/finish line. Changed your mind? <k>Cancel</k>.",
       "5": "<b>Plan: box ~L12 for hards</b> is advice from your strategists. When it changes to <b>Box this lap</b>, the <k>Box</k> button flashes green and your engineer calls it on the radio. When in doubt, follow it.",
-      "6": "<b>Box now → P14, 2.1 s behind ALB</b> shows where you'd rejoin if you pitted this lap (amber = straight into traffic). Below it, hints explain the fight you're in: the pass chance per lap, why you're stuck, and when an undercut is on."
+      "6": "<b>Box now → P14, 2.1 s behind ALB</b> shows where you'd rejoin if you pitted this lap (amber = straight into traffic). Below it, hints explain the fight you're in: the pass chance per lap, why you're stuck, and when an undercut is on.",
+      "7": "<b>⚡ Overtake</b> (key <k>O</k>) is the 2026 Overtake Mode: within a second of the car ahead it gives about 0.8 s for one lap and cancels the dirty air. It costs 40% of the battery, which recharges every lap (fastest in Conserve). <k>Defend</k> (key <k>D</k>) costs 25% and helps you hold off a car attacking you. The AI uses it too, so save some charge."
     },
     "decisions": {
       "title": "The decisions that win races",
@@ -492,7 +518,8 @@
       "speed": "Speed 1× / 2× / 4× / 8× / 16×",
       "box": "Box the selected car this lap (press again to cancel)",
       "car": "Select your first / second car",
-      "esc": "Close a pop-up and carry on"
+      "esc": "Close a pop-up and carry on",
+      "boost": "Overtake Mode / Defend for the selected car"
     },
     "first": {
       "title": "Your first race in one minute",
@@ -521,6 +548,10 @@
     "tipHold": "Team order Hold is on: teammates don't race",
     "tipDefend": "Push to keep them behind",
     "tipCover": "Box first to cover it",
-    "tipBoxFor": "Box this lap for {tyre}"
+    "tipBoxFor": "Box this lap for {tyre}",
+    "tipOvertake": "Press ⚡ Overtake: pass chance rises to ~{chance}% this lap",
+    "tipCharge": "Charge the battery for a ⚡ attack (Conserve charges fastest)",
+    "tipDefendBoost": "Press Defend to hold them off",
+    "tipSwap": "Faster than your teammate? Use the Swap team order"
   }
 }

@@ -33,6 +33,7 @@ export function RecentRaces() {
             team: entry.teamId,
             laps: String(entry.laps),
             weather: entry.weather,
+            difficulty: entry.difficulty ?? "normal",
             seed: String(entry.seed),
           });
           return (

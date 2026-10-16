@@ -2,7 +2,14 @@
 
 import { DriverPortrait } from "@/components/driver-portrait";
 import { Button } from "@/components/ui/button";
-import type { CarState, Compound, PaceMode, Race, RaceCommand } from "@/engine";
+import {
+  OVERTAKE_MODE,
+  type CarState,
+  type Compound,
+  type PaceMode,
+  type Race,
+  type RaceCommand,
+} from "@/engine";
 import { boxNow, carInsights, pitWindow, type Insight } from "@/game/insights";
 import {
   estimatedWear,
@@ -14,6 +21,7 @@ import {
 import { useMsg } from "@/i18n/use-msg";
 import { formatGap, formatLapTime } from "@/lib/format";
 import { cn } from "@/lib/utils";
+import { Shield, Zap } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useState } from "react";
 import { TYRE_COLORS, TyreBadge } from "./tyre-badge";
@@ -60,6 +68,8 @@ export function PlayerCarCard({
   const lastLaps = car.lapTimes.slice(-3).reverse();
   const mustSwitch = needsSecondCompound(race, car);
   const boxing = boxNow(race, car);
+  const canAttack = race.canBoost(car, "attack");
+  const canDefend = race.canBoost(car, "defend");
   const insights = active ? carInsights(race, car) : [];
   const rejoin = car.pitRequest ? null : pitWindow(race, car);
 
@@ -169,6 +179,90 @@ export function PlayerCarCard({
                 {t(`pace.${mode}`)}
               </button>
             ))}
+          </div>
+
+          <div className="flex items-center gap-1.5">
+            <div
+              className="flex flex-1 items-center gap-1.5"
+              title={t("battery", { battery: Math.round(car.battery) })}
+            >
+              <Zap
+                className={cn(
+                  "size-3.5 shrink-0",
+                  car.boost?.kind === "attack"
+                    ? "text-yellow-300"
+                    : "text-muted-foreground",
+                )}
+              />
+              <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-muted">
+                <div
+                  className={cn(
+                    "h-full rounded-full transition-[width]",
+                    car.battery >= OVERTAKE_MODE.attackCost
+                      ? "bg-yellow-300"
+                      : "bg-yellow-300/40",
+                  )}
+                  style={{ width: `${car.battery}%` }}
+                />
+              </div>
+              <span className="w-8 text-right font-mono text-[10px] text-muted-foreground">
+                {Math.round(car.battery)}%
+              </span>
+            </div>
+            {car.boost ? (
+              <span
+                className={cn(
+                  "rounded-md px-2 py-1 text-[11px] font-bold uppercase",
+                  car.boost.kind === "attack"
+                    ? "animate-pulse bg-yellow-300 text-black"
+                    : "bg-sky-600/80 text-white",
+                )}
+              >
+                {car.boost.kind === "attack" ? t("attacking") : t("defending")}
+              </span>
+            ) : (
+              <>
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  title={t("overtakeHint")}
+                  disabled={!canAttack}
+                  className={cn(
+                    "font-bold",
+                    canAttack && "bg-yellow-300 text-black hover:bg-yellow-200",
+                  )}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onCommand({
+                      type: "boost",
+                      driverId: car.driverId,
+                      kind: "attack",
+                    });
+                  }}
+                >
+                  {t("overtake")}
+                </Button>
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  title={t("defendHint")}
+                  disabled={!canDefend}
+                  className={cn(
+                    canDefend && "bg-sky-600 text-white hover:bg-sky-500",
+                  )}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onCommand({
+                      type: "boost",
+                      driverId: car.driverId,
+                      kind: "defend",
+                    });
+                  }}
+                >
+                  <Shield /> {t("defend")}
+                </Button>
+              </>
+            )}
           </div>
 
           {car.status === "pit" ? (

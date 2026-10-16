@@ -26,9 +26,11 @@ import {
 } from "./tyres";
 import type {
   Battle,
+  BoostKind,
   CarState,
   ClassifiedResult,
   Compound,
+  Difficulty,
   DryCompound,
   PaceMode,
   PitRejoin,
@@ -59,6 +61,79 @@ const DIRTY_AIR = 0.35;
 const ATTACK_GAP = 0.3;
 /** Overtaking is easier on the lap after a Safety Car restart, with the field bunched up. */
 const RESTART_OVERTAKE_BOOST = 1.8;
+
+/**
+ * Overtake Mode (2026 rules): within a second of another car, extra electric deployment for one
+ * lap, paid for from a battery that recharges every lap (faster when saving tyres and energy).
+ */
+export const OVERTAKE_MODE = {
+  /** Lap time gained while it's on, s/lap. Attacking also ignores dirty air. */
+  attack: 0.8,
+  defend: 0.4,
+  /** Battery cost, %. */
+  attackCost: 40,
+  defendCost: 25,
+  /** Gap to the car ahead (attack) or behind (defend) needed to use it, s. */
+  range: 1,
+  /** While attacking, the car can try a pass from this far back (s) instead of ATTACK_GAP. */
+  attackGap: 0.45,
+  /** Battery recharge per lap by pace mode, %. */
+  recharge: { push: 4, balanced: 8, conserve: 15 },
+  startCharge: 60,
+} as const;
+/** Per-tick chance an AI car in range decides to attack (so it doesn't fire instantly). */
+const AI_BOOST_PER_TICK = 0.01;
+/** AI cars only attack with at least this much charge (outside the last laps). */
+const AI_ATTACK_CHARGE = 100;
+
+/** What each difficulty changes. Normal is the calibrated game. */
+const DIFFICULTY: Record<
+  Difficulty,
+  {
+    /** Added to the player team's pace deficit, %. */
+    playerPacePct: number;
+    /** Added to AI drivers' racecraft when fighting. */
+    aiRacecraft: number;
+    /** Multiplies how often AI cars use Overtake Mode to attack. */
+    aiAttack: number;
+    /** Chance an AI car defends with Overtake Mode when attacked. */
+    aiDefend: number;
+    /** Multiplies how often AI teams take a stop under a Safety Car. */
+    aiNeutralisation: number;
+    /** Extra laps AI teams take to react to rain. */
+    aiWeatherDelay: number;
+    /** AI teams answer an undercut by stopping on the next lap. */
+    aiCoverUndercut: boolean;
+  }
+> = {
+  easy: {
+    playerPacePct: -0.25,
+    aiRacecraft: -6,
+    aiAttack: 0.25,
+    aiDefend: 0.2,
+    aiNeutralisation: 0.6,
+    aiWeatherDelay: 1,
+    aiCoverUndercut: false,
+  },
+  normal: {
+    playerPacePct: 0,
+    aiRacecraft: 0,
+    aiAttack: 0.5,
+    aiDefend: 0.5,
+    aiNeutralisation: 1,
+    aiWeatherDelay: 0,
+    aiCoverUndercut: false,
+  },
+  hard: {
+    playerPacePct: 0,
+    aiRacecraft: 3,
+    aiAttack: 1,
+    aiDefend: 0.75,
+    aiNeutralisation: 1,
+    aiWeatherDelay: 0,
+    aiCoverUndercut: true,
+  },
+};
 /** Chance a crash brings out the SC / VSC; the rest are cleared under yellows. */
 const CRASH_SC = 0.5;
 const CRASH_VSC = 0.3;
@@ -115,6 +190,9 @@ export class Race {
   private readonly scSpeed: number;
   /** Race time until which the Safety Car restart makes overtaking easier. */
   private restartUntil = -1;
+  private readonly difficulty: (typeof DIFFICULTY)[Difficulty];
+  /** AI cars whose rival behind just pitted: they answer the undercut at the line (Hard). */
+  private coverRequests = new Set<number>();
   private readonly crashRatePerCarLap: number;
   private readonly fuelPerLap: number;
   private readonly startDelay: number[];
@@ -133,6 +211,7 @@ export class Race {
 
   constructor(config: RaceConfig) {
     this.config = config;
+    this.difficulty = DIFFICULTY[config.difficulty ?? "normal"];
     this.track = config.track;
     this.laps = config.laps ?? config.track.laps;
     this.lapLength = config.track.lengthMeters;
@@ -174,7 +253,9 @@ export class Race {
       car: {
         ...t.car,
         paceDeficitPct:
-          t.car.paceDeficitPct + formRng.normal(0, WEEKEND_FORM_SIGMA),
+          t.car.paceDeficitPct +
+          formRng.normal(0, WEEKEND_FORM_SIGMA) +
+          (t.id === config.playerTeamId ? this.difficulty.playerPacePct : 0),
       },
     }));
     const teamById = new Map(teams.map((t) => [t.id, t]));
@@ -243,6 +324,8 @@ export class Race {
         stints: [{ compound, startLap: 0, endLap: null }],
         fuelKg: this.laps * this.fuelPerLap + 0.5,
         paceMode: "balanced",
+        battery: OVERTAKE_MODE.startCharge,
+        boost: null,
         lapTimeTarget: 0,
         lapStartTime: 0,
         lastLapTime: null,
@@ -381,9 +464,12 @@ export class Race {
   /**
    * The fight with the car ahead in the race order, if it is within 1.5 s under green flags:
    * the pace advantage, the dirty-air penalty to overcome, and the chance of passing per lap.
-   * `paceMode` asks "what if this car switched to that mode".
+   * `whatIf` asks "what if this car switched pace mode / used Overtake Mode now".
    */
-  battle(car: CarState, paceMode: PaceMode = car.paceMode): Battle | null {
+  battle(
+    car: CarState,
+    whatIf: { paceMode?: PaceMode; attack?: boolean } = {},
+  ): Battle | null {
     if (
       car.status !== "racing" ||
       this.safetyCar.status !== "green" ||
@@ -397,9 +483,13 @@ export class Race {
     const gap = distance / (this.lapLength / this.expectedLap(car));
     if (gap > 1.5) return null;
 
+    const attacking = whatIf.attack || car.boost?.kind === "attack";
     const paceDelta =
-      this.expectedLap(ahead) - this.expectedLap(car, { paceMode });
-    const dirtyAir = DIRTY_AIR * (1 - ATTACK_GAP);
+      this.expectedLap(ahead) -
+      this.boostTime(ahead) -
+      (this.expectedLap(car, { paceMode: whatIf.paceMode ?? car.paceMode }) -
+        (attacking ? OVERTAKE_MODE.attack : this.boostTime(car)));
+    const dirtyAir = attacking ? 0 : DIRTY_AIR * (1 - ATTACK_GAP);
     // Lap-to-lap noise sometimes gives a slower car a shot and denies a faster one: average the
     // pass chance over the spread of the pace difference.
     const wetness = this.weather.wetness;
@@ -420,6 +510,30 @@ export class Race {
       dirtyAir,
       passChance: Math.min(0.95, passChance),
     };
+  }
+
+  /** Whether the car may use Overtake Mode right now: to attack the car ahead or to defend. */
+  canBoost(car: CarState, kind: BoostKind): boolean {
+    const cost =
+      kind === "attack" ? OVERTAKE_MODE.attackCost : OVERTAKE_MODE.defendCost;
+    if (
+      car.status !== "racing" ||
+      this.phase !== "racing" ||
+      this.safetyCar.status !== "green" ||
+      car.lap < 1 ||
+      car.boost ||
+      car.battery < cost
+    )
+      return false;
+    const other =
+      this.cars[this.order[car.position - (kind === "attack" ? 2 : 0)]];
+    if (!other || other.status !== "racing") return false;
+    const [front, back] = kind === "attack" ? [other, car] : [car, other];
+    const distance = this.raceDistance(front) - this.raceDistance(back);
+    return (
+      distance > 0 &&
+      distance / (this.lapLength / back.lapTimeTarget) <= OVERTAKE_MODE.range
+    );
   }
 
   carByDriver(driverId: string): CarState | undefined {
@@ -450,6 +564,7 @@ export class Race {
     this.updateWeather();
     this.updateVsc();
     this.updatePitLane();
+    this.aiBoosts();
     this.updateSpeeds();
     this.move();
     this.updateOrder();
@@ -520,9 +635,10 @@ export class Race {
       rng: this.rng,
     });
     // Most pit walls react within a lap or two; occasionally one gets it badly wrong.
-    const weatherReaction = this.rng.chance(0.1)
-      ? 3 + Math.floor(this.rng.next() * 2)
-      : Math.floor(this.rng.next() * 3);
+    const weatherReaction =
+      (this.rng.chance(0.1)
+        ? 3 + Math.floor(this.rng.next() * 2)
+        : Math.floor(this.rng.next() * 3)) + this.difficulty.aiWeatherDelay;
     return {
       plan,
       nextStopLap: jitterStopLap(plan.stints[0].endLap, this.laps, 0, this.rng),
@@ -589,6 +705,8 @@ export class Race {
       else if (command.type === "cancel-pit" && !car.punctured)
         car.pitRequest = null;
       else if (command.type === "pace") car.paceMode = command.mode;
+      else if (command.type === "boost" && this.canBoost(car, command.kind))
+        this.activateBoost(car, command.kind);
     }
     this.queue = [];
   }
@@ -672,8 +790,11 @@ export class Race {
     const status = this.safetyCar.status;
     const leader = racing[0];
 
+    if (status !== "green") for (const car of this.cars) car.boost = null;
+
     for (const car of racing) {
-      let speed = L / car.lapTimeTarget;
+      const target = car.lapTimeTarget - this.boostTime(car);
+      let speed = L / target;
       if (car.punctured) speed *= 0.55;
       const launch = Math.min(
         1,
@@ -694,9 +815,9 @@ export class Race {
             : gapSeconds > 0.8
               ? Math.min(speed, this.scSpeed * 1.6)
               : this.scSpeed;
-      } else if (ahead && gapSeconds < 1) {
-        // Dirty air: harder to follow closely.
-        speed = L / (car.lapTimeTarget + DIRTY_AIR * (1 - gapSeconds));
+      } else if (ahead && gapSeconds < 1 && car.boost?.kind !== "attack") {
+        // Dirty air: harder to follow closely (Overtake Mode makes up for it).
+        speed = L / (target + DIRTY_AIR * (1 - gapSeconds));
       }
 
       if (this.yielding.has(car.index)) speed *= 0.9;
@@ -717,7 +838,14 @@ export class Race {
       if (
         !car.passing &&
         ahead &&
-        ahead.distance < Math.max(18, speed * ATTACK_GAP) &&
+        ahead.distance <
+          Math.max(
+            18,
+            speed *
+              (car.boost?.kind === "attack"
+                ? OVERTAKE_MODE.attackGap
+                : ATTACK_GAP),
+          ) &&
         speed > ahead.other.speed
       ) {
         if (status === "green" && this.tryOvertake(car, ahead.other)) {
@@ -754,7 +882,9 @@ export class Race {
       : this.passChancePerLap(
           car,
           defender,
-          defender.lapTimeTarget - car.lapTimeTarget,
+          defender.lapTimeTarget -
+            this.boostTime(defender) -
+            (car.lapTimeTarget - this.boostTime(car)),
         );
     const perTick =
       1 - Math.pow(1 - Math.min(0.95, perLap), DT / car.lapTimeTarget);
@@ -762,6 +892,46 @@ export class Race {
     if (!lapping)
       this.emit({ type: "overtake", car: car.index, on: defender.index });
     return true;
+  }
+
+  /** Lap time the car is gaining from Overtake Mode right now, s/lap. */
+  private boostTime(car: CarState): number {
+    return car.boost ? OVERTAKE_MODE[car.boost.kind] : 0;
+  }
+
+  private activateBoost(car: CarState, kind: BoostKind) {
+    car.battery -=
+      kind === "attack" ? OVERTAKE_MODE.attackCost : OVERTAKE_MODE.defendCost;
+    car.boost = { kind, until: this.raceDistance(car) + this.lapLength };
+    const target =
+      this.cars[this.order[car.position - (kind === "attack" ? 2 : 0)]];
+    this.emit({ type: "boost", car: car.index, kind, target: target.index });
+    if (kind !== "attack") return;
+    // An AI car under attack may answer with its own deployment.
+    const defender = target;
+    if (
+      defender?.ai &&
+      this.canBoost(defender, "defend") &&
+      this.rng.chance(this.difficulty.aiDefend)
+    )
+      this.activateBoost(defender, "defend");
+  }
+
+  /** AI cars attack with Overtake Mode when close behind a car they can match on pace. */
+  private aiBoosts() {
+    if (this.safetyCar.status !== "green" || this.phase !== "racing") return;
+    for (const car of this.cars) {
+      if (!car.ai || car.boost || car.battery < OVERTAKE_MODE.attackCost)
+        continue;
+      // Keep charge to defend with, except in the last laps.
+      if (car.battery < AI_ATTACK_CHARGE && this.laps - car.lap > 5) continue;
+      if (!this.canBoost(car, "attack")) continue;
+      // Only attack a car it is at least as fast as; the player can be bolder.
+      const ahead = this.cars[this.order[car.position - 2]];
+      if (car.lapTimeTarget > ahead.lapTimeTarget) continue;
+      if (this.rng.chance(AI_BOOST_PER_TICK * this.difficulty.aiAttack))
+        this.activateBoost(car, "attack");
+    }
   }
 
   /** Chance per lap that `car` passes `defender` once close, at a given pace advantage (s/lap). */
@@ -779,11 +949,10 @@ export class Race {
       5,
       Math.max(1, this.track.overtakingDifficulty),
     );
-    const rc =
-      1 +
-      (this.driverOf[car.index].ratings.racecraft -
-        this.driverOf[defender.index].ratings.racecraft) *
-        0.025;
+    const racecraft = (c: CarState) =>
+      this.driverOf[c.index].ratings.racecraft +
+      (c.isPlayer ? 0 : this.difficulty.aiRacecraft);
+    const rc = 1 + (racecraft(car) - racecraft(defender)) * 0.025;
     return (
       OVERTAKE_BASE[difficulty - 1] *
       Math.min(3, Math.max(0, (delta - 0.1) / 0.9)) *
@@ -825,6 +994,8 @@ export class Race {
 
       const share = travelled / L;
       car.tyre.wear += share * this.currentWearRate(car);
+      if (car.boost && this.raceDistance(car) >= car.boost.until)
+        car.boost = null;
       car.fuelKg = Math.max(0, car.fuelKg - share * this.fuelPerLap);
 
       if (
@@ -883,6 +1054,10 @@ export class Race {
     car.lapTimes.push(lapTime);
     car.lastLapTime = lapTime;
     car.tyre.age++;
+    car.battery = Math.min(
+      100,
+      car.battery + OVERTAKE_MODE.recharge[car.paceMode],
+    );
     car.outLap = false;
     if (car.bestLapTime === null || lapTime < car.bestLapTime)
       car.bestLapTime = lapTime;
@@ -950,8 +1125,11 @@ export class Race {
       requireTwoCompounds: this.requireTwoCompounds,
       usedCompounds: car.usedCompounds,
       rng: this.rng,
+      neutralisationReaction: this.difficulty.aiNeutralisation,
     });
     if (decision.pit) car.pitRequest = decision.compound;
+    else if (this.coverRequests.has(car.index)) this.coverUndercut(car);
+    this.coverRequests.delete(car.index);
 
     const remaining = this.laps - car.lap;
     if (
@@ -965,8 +1143,35 @@ export class Race {
     else car.paceMode = "balanced";
   }
 
+  /** Hard AI: the car behind just pitted, so stop now if a stop was coming soon anyway. */
+  private coverUndercut(car: CarState) {
+    const ai = car.ai!;
+    const next = ai.plan.stints[1]?.compound;
+    if (
+      !next ||
+      !isDry(car.tyre.compound) ||
+      this.laps - car.lap <= 5 ||
+      (ai.nextStopLap !== null &&
+        ai.nextStopLap - car.lap > 8 &&
+        car.tyre.wear < 40)
+    )
+      return;
+    car.pitRequest = next;
+  }
+
   private enterPit(car: CarState) {
     const compound = car.pitRequest!;
+    // A rival close behind stopping first is an undercut attempt; Hard AI answers it.
+    const ahead = this.cars[this.order[car.position - 2]];
+    if (
+      this.difficulty.aiCoverUndercut &&
+      ahead?.ai &&
+      ahead.status === "racing" &&
+      ahead.teamId !== car.teamId &&
+      car.interval !== null &&
+      car.interval < 3
+    )
+      this.coverRequests.add(ahead.index);
     let stationary = Math.min(3.2, Math.max(1.9, this.rng.normal(2.4, 0.25)));
     if (this.rng.chance(0.06)) stationary += this.rng.range(1.5, 5.5);
     else if (this.rng.chance(0.01)) stationary += this.rng.range(6, 12);
@@ -990,6 +1195,7 @@ export class Race {
     car.pitRequest = null;
     car.passing = null;
     car.status = "pit";
+    car.boost = null;
     car.pitTimeLeft = this.track.pitLaneLossSeconds + stationary;
     car.lapDistance = 0;
     this.tyreWarned[car.index] = false;

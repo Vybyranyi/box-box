@@ -1,4 +1,10 @@
-import { isDry, type CarState, type DryCompound, type Race } from "@/engine";
+import {
+  isDry,
+  OVERTAKE_MODE,
+  type CarState,
+  type DryCompound,
+  type Race,
+} from "@/engine";
 import { msg, tyresPlural, type Msg } from "./messages";
 import { recommendedCompound } from "./pit-wall";
 
@@ -15,6 +21,8 @@ const BATTLE_GAP = 1.2;
 const STUCK_CHANCE = 0.1;
 /** Pass chance per lap that makes switching to Push worth the extra tyre wear. */
 const PUSH_WORTH_IT = 0.15;
+/** Pass chance that makes spending battery on Overtake Mode worth it. */
+const OVERTAKE_WORTH_IT = 0.12;
 /** Undercut checks only look at rivals within this gap (s). */
 const UNDERCUT_RANGE = 3.5;
 /** Margin (s) the undercut must win by to be worth calling. */
@@ -166,6 +174,24 @@ export function battleInsight(race: Race, car: CarState): Insight | null {
   if (battle && battle.gap <= BATTLE_GAP) {
     const ahead = race.cars[battle.ahead];
     const chance = percent(battle.passChance);
+    // What Overtake Mode would do here, whether or not it can be used right now.
+    const teammate = ahead.teamId === car.teamId;
+    // Battery is for rivals: a faster teammate gets through on a team order.
+    const boosted =
+      car.boost || teammate
+        ? null
+        : (race.battle(car, { attack: true })?.passChance ?? null);
+    const overtakeTip =
+      boosted !== null &&
+      boosted >= OVERTAKE_WORTH_IT &&
+      boosted > battle.passChance + 0.05
+        ? race.canBoost(car, "attack")
+          ? msg("insight.tipOvertake", { chance: percent(boosted) })
+          : car.battery < OVERTAKE_MODE.attackCost
+            ? msg("insight.tipCharge")
+            : undefined
+        : undefined;
+
     if (battle.passChance >= STUCK_CHANCE)
       return {
         tone: "good",
@@ -174,20 +200,25 @@ export function battleInsight(race: Race, car: CarState): Insight | null {
           delta: seconds(battle.paceDelta),
           chance,
         }),
+        tip: overtakeTip,
       };
-    const teammateHold =
-      ahead.teamId === car.teamId && race.teamOrders[car.teamId] === "hold";
+    const teammateHold = teammate && race.teamOrders[car.teamId] === "hold";
     // Only suggest pushing when it makes a pass realistic: pushing for many laps while stuck
     // just burns the tyres.
     const withPush =
-      car.paceMode === "push" ? null : race.battle(car, "push")?.passChance;
+      car.paceMode === "push"
+        ? null
+        : race.battle(car, { paceMode: "push" })?.passChance;
     const tip = teammateHold
       ? msg("insight.tipHold")
-      : withPush && withPush >= PUSH_WORTH_IT
-        ? msg("insight.tipPush", { chance: percent(withPush) })
-        : undercutInsight(race, car)?.tone === "good"
-          ? msg("insight.tipUndercut")
-          : msg("insight.tipWait");
+      : teammate && battle.paceDelta > 0
+        ? msg("insight.tipSwap")
+        : (overtakeTip ??
+          (withPush && withPush >= PUSH_WORTH_IT
+            ? msg("insight.tipPush", { chance: percent(withPush) })
+            : undercutInsight(race, car)?.tone === "good"
+              ? msg("insight.tipUndercut")
+              : msg("insight.tipWait")));
     return {
       tone: "warn",
       message: msg(
@@ -217,9 +248,10 @@ export function battleInsight(race: Race, car: CarState): Insight | null {
         car: behind.code,
         chance: percent(defence.passChance),
       }),
-      // Late in the race the extra tyre wear from pushing no longer matters.
-      tip:
-        car.paceMode !== "push" && race.laps - car.lap <= 10
+      tip: race.canBoost(car, "defend")
+        ? msg("insight.tipDefendBoost")
+        : // Late in the race the extra tyre wear from pushing no longer matters.
+          car.paceMode !== "push" && race.laps - car.lap <= 10
           ? msg("insight.tipDefend")
           : undefined,
     };

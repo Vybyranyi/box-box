@@ -78,10 +78,13 @@ async function Qualifying({
     laps: params.laps,
     weather: params.weather,
     playerTeamId: params.teamId,
+    difficulty: params.difficulty,
   });
   const results = race.qualifying!;
   const team = teams.find((x) => x.id === params.teamId) ?? null;
-  const objective = team ? teamObjective(teams, race.track, team.id) : null;
+  const objective = team
+    ? teamObjective(teams, race.track, team.id, params.difficulty)
+    : null;
   const pole = results[0].q3 ?? results[0].q2 ?? results[0].q1!;
   const wet = idealCompoundFor(race.weather.wetness) !== "dry";
   const own = results.filter((r) => r.teamId === params.teamId);

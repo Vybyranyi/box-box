@@ -8,6 +8,12 @@ export type PaceMode = "push" | "balanced" | "conserve";
 
 export type WeatherMode = "auto" | "dry" | "wet" | "mixed";
 
+/** How forgiving the AI teams are; Easy also gives the player's cars a little extra pace. */
+export type Difficulty = "easy" | "normal" | "hard";
+
+/** Overtake Mode: extra electric deployment to attack the car ahead, or to defend. */
+export type BoostKind = "attack" | "defend";
+
 export type RaceConfig = {
   seed: number;
   track: Track;
@@ -24,6 +30,8 @@ export type RaceConfig = {
   startingTyres?: Record<string, Compound>;
   /** Dry races must use two different dry compounds; defaults to on for races of at least half distance. */
   requireTwoCompounds?: boolean;
+  /** Defaults to "normal". */
+  difficulty?: Difficulty;
 };
 
 export type CarStatus = "racing" | "pit" | "retired" | "finished";
@@ -76,6 +84,10 @@ export type CarState = {
   stints: Stint[];
   fuelKg: number;
   paceMode: PaceMode;
+  /** Overtake Mode battery charge, 0..100 %. */
+  battery: number;
+  /** Overtake Mode in use, until the car reaches this race distance (m). */
+  boost: { kind: BoostKind; until: number } | null;
 
   /** Target lap time for the current lap, before traffic effects. */
   lapTimeTarget: number;
@@ -168,6 +180,8 @@ export type RaceEvent =
   | { type: "puncture"; car: number }
   | { type: "tyre-warning"; car: number; wear: number }
   | { type: "fastest-lap"; car: number; lapTime: number }
+  /** Overtake Mode used against `target`: the car ahead (attack) or behind (defend). */
+  | { type: "boost"; car: number; kind: BoostKind; target: number }
   | { type: "team-order"; teamId: string; order: TeamOrder }
   | { type: "chequered-flag" }
   | { type: "finished"; car: number; position: number }
@@ -202,6 +216,7 @@ export type RaceCommand =
   | { type: "pit"; driverId: string; compound: Compound }
   | { type: "cancel-pit"; driverId: string }
   | { type: "pace"; driverId: string; mode: PaceMode }
+  | { type: "boost"; driverId: string; kind: BoostKind }
   | { type: "team-order"; teamId: string; order: TeamOrder };
 
 export type ClassifiedResult = {

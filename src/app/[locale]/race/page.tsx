@@ -43,11 +43,18 @@ async function RaceFromParams({
       locale: await getLocale(),
     });
   }
-  const { trackId, teamId, laps, weather, seed } = params;
+  const { trackId, teamId, laps, weather, difficulty, seed } = params;
   return (
     <RaceView
-      key={`${trackId}-${seed}-${teamId}-${laps}-${weather}`}
-      setup={{ trackId, seed: seed!, playerTeamId: teamId, laps, weather }}
+      key={`${trackId}-${seed}-${teamId}-${laps}-${weather}-${difficulty}`}
+      setup={{
+        trackId,
+        seed: seed!,
+        playerTeamId: teamId,
+        laps,
+        weather,
+        difficulty,
+      }}
     />
   );
 }
