@@ -32,6 +32,12 @@ Driver headshots, team logos and car renders come from the formula1.com CDN, and
 - `src/app/`, `src/components/` - UI. The race map is drawn with Canvas 2D; the HUD is React.
 - `scripts/` - data collection scripts (Jolpica, OpenF1, `bacinger/f1-circuits` GeoJSON), run manually with `tsx`. The Vercel build never calls external APIs.
 
+## Race engine
+
+- `createRace(config)` returns a `Race`; call `step()` (0.5 s of race time) or `run()`, and `command()` for player decisions. Read state from `race.cars`, `race.order`, `race.events`.
+- Separate random streams for the race, weather, mechanical failures and weekend form, so player choices never change the weather or reliability. Never use `Math.random` in the engine.
+- Calibration constants live at the top of `race.ts`, `tyres.ts` and `strategy.ts`. After changing them, check `npm run sim -- --track <id> --runs 200` and the sanity test (`src/engine/sanity.test.ts`, 500 races).
+
 ## Workflow
 
 - Commit directly to `main`, one commit per logical step; push after each stage.

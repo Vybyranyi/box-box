@@ -12,7 +12,8 @@
     "test:watch": "vitest",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "data": "tsx scripts/build-data.ts"
+    "data": "tsx scripts/build-data.ts",
+    "sim": "tsx scripts/sim.ts"
   },
   "dependencies": {
     "@base-ui/react": "^1.9.0",

@@ -20,8 +20,19 @@ npm run dev
 | `npm run typecheck` | TypeScript                      |
 | `npm run format`    | Prettier                        |
 | `npm run data`      | Regenerate `src/data` from APIs |
+| `npm run sim`       | Simulate races in the terminal  |
 
 Stack: Next.js, TypeScript, Tailwind, shadcn/ui, Vitest.
+
+## Race engine
+
+`src/engine` is a deterministic race simulation in plain TypeScript: the same seed and the same commands always give the same race. Try it from the terminal:
+
+```bash
+npm run sim -- --track monza --seed 7
+npm run sim -- --track monaco --weather mixed
+npm run sim -- --track silverstone --runs 200
+```
 
 ## Data
 
