@@ -27,7 +27,7 @@ export function HomeActions() {
     const pool = upcoming.length ? upcoming : calendar;
     const track = getTrack(pool[values[1] % pool.length].trackId);
     router.push(
-      `/qualifying?${raceQuery({ trackId: track.id, teamId: team.id, laps: lapsFor(track, "sprint"), weather: "auto", difficulty: settings.difficulty ?? "normal", seed: newSeed() })}`,
+      `/qualifying?${raceQuery({ trackId: track.id, teamId: team.id, laps: lapsFor(track, "sprint"), weather: "auto", difficulty: settings.difficulty ?? "normal", qualifying: "auto", seed: newSeed() })}`,
     );
   };
 

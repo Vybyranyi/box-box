@@ -1,4 +1,5 @@
 import type { Difficulty, WeatherMode } from "@/engine";
+import type { QualifyingMode } from "./race-options";
 import { readStored, writeStored } from "@/lib/storage";
 import type { Grade } from "./objective";
 
@@ -14,6 +15,7 @@ export type HistoryEntry = {
   weather: WeatherMode;
   /** Missing in entries saved before difficulty levels existed. */
   difficulty?: Difficulty;
+  qualifying?: QualifyingMode;
   seed: number;
   grade: Grade;
   score: number;

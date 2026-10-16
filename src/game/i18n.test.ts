@@ -1,9 +1,10 @@
 import { drivers, getTrack, teams, tracks } from "@/data";
-import { createRace } from "@/engine";
+import { createQualifying, createRace } from "@/engine";
 import { describe, expect, it } from "vitest";
 import { alertFor } from "./alerts";
 import { boxCalls, carInsights, pitWindow } from "./insights";
 import { MomentLog } from "./moments";
+import { qualiFeed } from "./quali-text";
 import { RadioRequests } from "./radio-requests";
 import { describeEvent } from "./event-text";
 import type { Msg } from "./messages";
@@ -170,5 +171,34 @@ describe("request and moment texts", () => {
     expect(tr({ key: "moments.goodStart", values }, "uk")).toContain(
       "3 позиції",
     );
+  });
+});
+
+describe("qualifying texts", () => {
+  it("translates every feed line a session produces", () => {
+    const session = createQualifying({
+      seed: 5,
+      track: getTrack("silverstone"),
+      teams,
+      drivers,
+      weather: "dry",
+      playerTeamId: "mclaren",
+    });
+    session.command({ type: "auto" });
+    const keys = new Set<string>();
+    while (session.state !== "finished") {
+      if (session.state === "break") session.nextPhase();
+      for (const event of session.step()) {
+        const item = qualiFeed(session, event, "mclaren");
+        if (!item) continue;
+        keys.add(item.message.key);
+        for (const locale of ["en", "uk"] as const)
+          expect(tr(item.message, locale), item.message.key).not.toMatch(
+            /[{}]/,
+          );
+      }
+    }
+    expect(keys.size).toBeGreaterThan(4);
+    expect(keys).toContain("quali.feed.pole");
   });
 });

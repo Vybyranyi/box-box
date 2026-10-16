@@ -3,7 +3,7 @@ import { drivers, getTrack, teams, tracks } from "@/data";
 import { createRace } from "@/engine";
 import { describe, expect, it } from "vitest";
 import { gradeRace, teamObjective, teamRanking } from "./objective";
-import { parseRaceParams, withSeed } from "./parse-params";
+import { gridParam, parseRaceParams, withSeed } from "./parse-params";
 import { DISTANCES, lapsFor, raceQuery } from "./race-options";
 
 describe("team objectives", () => {
@@ -99,6 +99,7 @@ describe("race options and URLs", () => {
       laps: 11,
       weather: "wet",
       difficulty: "hard",
+      qualifying: "manual",
       seed: 42,
     });
     const parsed = parseRaceParams(
@@ -110,9 +111,20 @@ describe("race options and URLs", () => {
       laps: 11,
       weather: "wet",
       difficulty: "hard",
+      qualifying: "manual",
+      grid: null,
       seed: 42,
     });
     expect(new URLSearchParams(withSeed(parsed, 7)).get("seed")).toBe("7");
+  });
+
+  it("reads a played qualifying grid, and ignores an incomplete one", () => {
+    const ids = drivers.map((d) => d.id).reverse();
+    expect(parseRaceParams({ grid: gridParam(ids) }).grid).toEqual(ids);
+    expect(parseRaceParams({ grid: "RUS,ANT" }).grid).toBeNull();
+    expect(
+      parseRaceParams({ grid: gridParam([...ids.slice(1), ids[1]]) }).grid,
+    ).toBeNull();
   });
 
   it("falls back to safe defaults for bad input", () => {
@@ -129,6 +141,8 @@ describe("race options and URLs", () => {
       laps: undefined,
       weather: "auto",
       difficulty: "normal",
+      qualifying: "auto",
+      grid: null,
       seed: null,
     });
     expect(parseRaceParams({ track: "monaco", laps: "999" }).laps).toBe(

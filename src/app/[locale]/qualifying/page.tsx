@@ -1,4 +1,5 @@
 import { DriverPortrait } from "@/components/driver-portrait";
+import { QualiLive } from "@/components/qualifying/quali-live";
 import { LocaleSwitcher } from "@/components/locale-switcher";
 import { TrackOutline } from "@/components/track-outline";
 import { buttonVariants } from "@/components/ui/button";
@@ -62,6 +63,20 @@ async function Qualifying({
     });
   }
   const seed = params.seed!;
+  if (params.qualifying === "manual" && params.teamId)
+    return (
+      <QualiLive
+        setup={{
+          trackId: params.trackId,
+          teamId: params.teamId,
+          laps: params.laps,
+          weather: params.weather,
+          difficulty: params.difficulty,
+          seed,
+        }}
+        query={withSeed(params, seed)}
+      />
+    );
   const [t, all] = await Promise.all([
     getTranslations("qualifying"),
     getTranslations(),

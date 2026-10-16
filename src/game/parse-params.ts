@@ -1,6 +1,6 @@
-import { getTrack, teams, tracks } from "@/data";
+import { drivers, getTrack, teams, tracks } from "@/data";
 import type { Difficulty, WeatherMode } from "@/engine";
-import { DIFFICULTIES } from "./race-options";
+import { DIFFICULTIES, type QualifyingMode } from "./race-options";
 
 const WEATHER: WeatherMode[] = ["auto", "dry", "wet", "mixed"];
 
@@ -11,6 +11,9 @@ export type ParsedRaceParams = {
   teamId: string | null;
   weather: WeatherMode;
   difficulty: Difficulty;
+  qualifying: QualifyingMode;
+  /** Starting order from a played qualifying session (driver ids), if given. */
+  grid: string[] | null;
   laps: number | undefined;
   /** Null when missing or invalid: the page should redirect with a fresh one. */
   seed: number | null;
@@ -37,9 +40,30 @@ export function parseRaceParams(params: SearchParams): ParsedRaceParams {
   const difficulty = DIFFICULTIES.includes(difficultyParam)
     ? difficultyParam
     : "normal";
+  const qualifying: QualifyingMode =
+    str(params.quali) === "manual" ? "manual" : "auto";
+  const grid = parseGrid(str(params.grid));
   const seedParam = Number(str(params.seed));
   const seed = Number.isInteger(seedParam) && seedParam >= 0 ? seedParam : null;
-  return { trackId, teamId, weather, difficulty, laps, seed };
+  return { trackId, teamId, weather, difficulty, qualifying, grid, laps, seed };
+}
+
+/** Driver codes in grid order ("RUS,ANT,…") → driver ids; null unless it lists every driver once. */
+function parseGrid(value: string | undefined): string[] | null {
+  if (!value) return null;
+  const codes = value.split(",");
+  const ids = codes.map((code) => drivers.find((d) => d.code === code)?.id);
+  if (ids.length !== drivers.length || new Set(ids).size !== ids.length)
+    return null;
+  if (ids.some((id) => id === undefined)) return null;
+  return ids as string[];
+}
+
+/** Grid as the `grid` query value: driver codes in order. */
+export function gridParam(driverIds: string[]): string {
+  return driverIds
+    .map((id) => drivers.find((d) => d.id === id)!.code)
+    .join(",");
 }
 
 /** Query string for the same race with a given seed. */
@@ -48,6 +72,7 @@ export function withSeed(p: ParsedRaceParams, seed: number): string {
     track: p.trackId,
     weather: p.weather,
     difficulty: p.difficulty,
+    quali: p.qualifying,
     seed: String(seed),
   });
   if (p.teamId) query.set("team", p.teamId);

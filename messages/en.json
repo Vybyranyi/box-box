@@ -144,6 +144,17 @@
         "label": "Hard",
         "detail": "AI teams answer your undercuts, attack more often and fight harder."
       }
+    },
+    "qualifyingMode": "Qualifying",
+    "qualifyingModes": {
+      "manual": {
+        "label": "Play it",
+        "detail": "Run Q1, Q2 and Q3 yourself: when to go out, on which tyres, one lap or two. Your grid is what you earn."
+      },
+      "auto": {
+        "label": "Auto",
+        "detail": "Qualifying is simulated instantly and you go straight to the grid."
+      }
     }
   },
   "qualifying": {
@@ -479,7 +490,7 @@
       "2": "<b>Pick a team.</b> For your first race take a fast car like <b>Mercedes</b> or <b>McLaren</b>: it's easier to see the effect of your decisions at the front.",
       "3": "<b>Pick a circuit, distance and weather.</b> Start with <k>Sprint</k> (10 laps) and <k>Dry</k>. The box on the right shows your <b>team objective</b>, the result your bosses expect.",
       "4": "<b>Difficulty.</b> <k>Easy</k> if you want to win more often: slower rival strategists, a slightly faster car and softer objectives. <k>Hard</k> if the AI should fight back.",
-      "5": "<b>Qualifying</b> shows where your drivers start. Press <k>To the grid</k>.",
+      "5": "<b>Qualifying.</b> With <k>Play it</k> you run Q1, Q2 and Q3 yourself: send each car out with <k>Go out</k>, pick new or used softs and one or two timed laps. The track gets quicker towards the end of each part, but traffic grows and a lap only counts if it starts before the flag; the slowest six drop out after Q1 and Q2. The <k>Auto</k> button hands it to the team at any moment. With <k>Auto</k> chosen in setup, qualifying is simulated instantly.",
       "6": "<b>Choose starting tyres</b> for each car (the suggestion under the driver's name is a good default), then <k>Lights out</k>."
     },
     "screen": {
@@ -600,5 +611,90 @@
     "puncture": "{car} got a puncture",
     "dsq": "{car} was disqualified: two dry compounds are mandatory",
     "defended": "{car} held off {rival} with Defend"
+  },
+  "quali": {
+    "timing": "Live timing",
+    "status": {
+      "out": "Out",
+      "garage": "Garage",
+      "outLap": "Out lap",
+      "flying": "Flying lap",
+      "inLap": "In lap"
+    },
+    "noTime": "no time yet",
+    "needs": "+{gap} to get through",
+    "margin": "safe by {gap}",
+    "through": "through to the next part",
+    "outShort": "OUT",
+    "knockedOut": "knocked out in Q{phase}",
+    "lastLap": "Last lap",
+    "deleted": "deleted",
+    "mistake": "mistake",
+    "traffic": "traffic",
+    "abort": "Box",
+    "tyres": {
+      "soft-new": "New soft",
+      "soft-used": "Used soft",
+      "medium": "Medium",
+      "intermediate": "Inters",
+      "wet": "Wets"
+    },
+    "pushLaps": "Timed laps in this run",
+    "pushHint": {
+      "1": "One flying lap: tyres at their best",
+      "2": "Two flying laps: a second chance, but the second is a little slower on the same tyres"
+    },
+    "laps": "{laps, plural, one {# lap} other {# laps}}",
+    "go": "Go out",
+    "readyIn": "Tyres ready in {time}",
+    "sessionOver": "Session over",
+    "lastChance": "Last chance to go out: {time}",
+    "tooLate": "Too late for a timed lap",
+    "sets": "{sets, plural, =0 {no new softs left} one {# new soft set left} other {# new soft sets left}}",
+    "changeSetup": "← Change setup",
+    "title": "Qualifying · {track}",
+    "wetSession": "Wet session",
+    "drySession": "Dry session",
+    "phase": "Session part",
+    "clock": "Time left",
+    "auto": "Auto",
+    "autoHint": "Let the team run the rest of qualifying for both cars",
+    "soundOn": "Turn sound on",
+    "soundOff": "Turn sound off",
+    "resume": "Resume",
+    "pause": "Pause",
+    "introTitle": "Qualifying is about to start",
+    "intro": "Q1 lasts 18 minutes and the slowest six drop out, Q2 15 minutes (six more out), Q3 12 minutes for pole. Send each car out with Go out: an out-lap, a timed lap, an in-lap. The track gets faster towards the end, but so does the traffic, and a lap only counts if it starts before the flag.",
+    "start": "Start {phase}",
+    "trafficNow": "On track now: {cars, plural, one {# car} other {# cars}} · traffic risk {chance}%",
+    "evolution": "The track will still get ~{gain} s quicker by the flag",
+    "dropZone": "Top {keep} of {cars} go through; the rest are out",
+    "q3": "Q3: the fight for pole",
+    "feedTitle": "Session",
+    "feedEmpty": "Nobody has set a time yet.",
+    "phaseOver": "Q{phase} is over",
+    "knockedOutList": "Knocked out:",
+    "finished": "Qualifying is over",
+    "poleFor": "Pole position: {car}",
+    "toGrid": "To the grid",
+    "again": "Qualify again",
+    "feed": {
+      "deleted": "{car}: lap deleted for track limits",
+      "top": "{car} goes top: {time}",
+      "best": "{car}: {time}, P{position}",
+      "bestDespite": {
+        "mistake": "{car}: {time}, P{position} despite a mistake",
+        "traffic": "{car}: {time}, P{position} despite traffic"
+      },
+      "slower": {
+        "mistake": "{car}: {time}, a mistake, no improvement",
+        "traffic": "{car}: {time}, held up in traffic",
+        "plain": "{car}: {time}, no improvement"
+      },
+      "flag": "Chequered flag in Q{phase}: laps already started still count",
+      "pole": "Pole position for {car}!",
+      "out": "Out in Q{phase}: {cars}",
+      "outOwn": "Out in Q{phase}: {cars}"
+    }
   }
 }

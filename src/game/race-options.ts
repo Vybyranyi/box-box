@@ -13,6 +13,10 @@ export type DistanceId = (typeof DISTANCES)[number]["id"];
 /** Weather modes offered in setup; labels live in messages (setup.weathers.*). */
 export const WEATHER_OPTIONS: WeatherMode[] = ["auto", "dry", "mixed", "wet"];
 
+/** Qualifying: run it yourself, or have it simulated instantly. */
+export type QualifyingMode = "manual" | "auto";
+export const QUALIFYING_MODES: QualifyingMode[] = ["manual", "auto"];
+
 /** Difficulty levels offered in setup; labels live in messages (setup.difficulties.*). */
 export const DIFFICULTIES: Difficulty[] = ["easy", "normal", "hard"];
 
@@ -28,6 +32,7 @@ export type RaceParams = {
   laps: number;
   weather: WeatherMode;
   difficulty: Difficulty;
+  qualifying: QualifyingMode;
   seed: number;
 };
 
@@ -38,6 +43,7 @@ export function raceQuery(p: RaceParams): string {
     laps: String(p.laps),
     weather: p.weather,
     difficulty: p.difficulty,
+    quali: p.qualifying,
     seed: String(p.seed),
   }).toString();
 }
@@ -54,6 +60,8 @@ export type Settings = {
   weather: WeatherMode;
   /** Missing in settings saved before difficulty levels existed. */
   difficulty?: Difficulty;
+  /** Missing in settings saved before playable qualifying existed. */
+  qualifying?: QualifyingMode;
   autoPause: boolean;
 };
 
@@ -63,5 +71,6 @@ export const DEFAULT_SETTINGS: Settings = {
   distance: "quarter",
   weather: "auto",
   difficulty: "normal",
+  qualifying: "manual",
   autoPause: true,
 };

@@ -8,6 +8,7 @@ import {
   DEFAULT_SETTINGS,
   DIFFICULTIES,
   DISTANCES,
+  QUALIFYING_MODES,
   lapsFor,
   newSeed,
   raceQuery,
@@ -53,6 +54,7 @@ export function SetupWizard() {
   const trackName = tTracks(trackId as never);
   const laps = lapsFor(track, settings.distance);
   const difficulty = settings.difficulty ?? "normal";
+  const qualifying = settings.qualifying ?? "manual";
   const objective = team
     ? teamObjective(teams, track, team.id, difficulty)
     : null;
@@ -70,7 +72,7 @@ export function SetupWizard() {
     if (!team) return;
     update({ trackId });
     router.push(
-      `/qualifying?${raceQuery({ trackId, teamId: team.id, laps, weather: settings.weather, difficulty, seed: newSeed() })}`,
+      `/qualifying?${raceQuery({ trackId, teamId: team.id, laps, weather: settings.weather, difficulty, qualifying, seed: newSeed() })}`,
     );
   };
 
@@ -239,6 +241,33 @@ export function SetupWizard() {
               </div>
               <p className="text-[11px] text-muted-foreground">
                 {t(`difficulties.${difficulty}.detail`)}
+              </p>
+            </section>
+
+            <section className="flex flex-col gap-2 rounded-xl border bg-card p-4">
+              <h2 className="text-xs font-semibold text-muted-foreground uppercase">
+                {t("qualifyingMode")}
+              </h2>
+              <div className="grid grid-cols-2 gap-1.5">
+                {QUALIFYING_MODES.map((id) => (
+                  <button
+                    key={id}
+                    type="button"
+                    onClick={() => update({ qualifying: id })}
+                    aria-pressed={qualifying === id}
+                    className={cn(
+                      "rounded-lg border px-2 py-1.5 text-sm font-semibold transition-colors",
+                      qualifying === id
+                        ? "border-primary bg-primary/10"
+                        : "hover:bg-muted",
+                    )}
+                  >
+                    {t(`qualifyingModes.${id}.label`)}
+                  </button>
+                ))}
+              </div>
+              <p className="text-[11px] text-muted-foreground">
+                {t(`qualifyingModes.${qualifying}.detail`)}
               </p>
             </section>
 

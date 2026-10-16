@@ -12,7 +12,11 @@ import type {
 import { alertFor, type RaceAlert } from "@/game/alerts";
 import { saveToHistory } from "@/game/history";
 import { gradeRace } from "@/game/objective";
-import { DEFAULT_SETTINGS, type Settings } from "@/game/race-options";
+import {
+  DEFAULT_SETTINGS,
+  type QualifyingMode,
+  type Settings,
+} from "@/game/race-options";
 import { DEFAULT_SOUND, SoundBoard, type SoundSettings } from "@/lib/sound";
 import { useStored } from "@/lib/storage";
 import { useLocale, useTranslations } from "next-intl";
@@ -52,6 +56,9 @@ export type RaceSetup = {
   laps?: number;
   weather: WeatherMode;
   difficulty: Difficulty;
+  qualifying: QualifyingMode;
+  /** Starting order from a played qualifying session; simulated when null. */
+  grid: string[] | null;
 };
 
 /** How often the React side (tower, panels) refreshes; the map redraws every frame. */
@@ -73,6 +80,7 @@ function createRunner(
     playerTeamId: setup.playerTeamId,
     startingTyres,
     difficulty: setup.difficulty,
+    grid: setup.grid ?? undefined,
   });
 }
 
@@ -265,6 +273,7 @@ export function RaceView({ setup }: { setup: RaceSetup }) {
         laps: race.laps,
         weather: setup.weather,
         difficulty: setup.difficulty,
+        qualifying: setup.qualifying,
         seed: setup.seed,
         grade: report.grade,
         score: report.score,
@@ -572,6 +581,7 @@ export function RaceView({ setup }: { setup: RaceSetup }) {
           race={race}
           teamId={teamId}
           moments={moments}
+          qualifying={setup.qualifying}
           onClose={() => setShowResults(false)}
         />
       )}

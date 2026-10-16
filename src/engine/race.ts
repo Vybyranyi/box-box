@@ -246,18 +246,7 @@ export class Race {
       (config.drivers.length * this.track.laps) /
       CRASH_CALIBRATION;
 
-    // Weekend form: cars suit some circuits and conditions better than others.
-    const formRng = createRng(config.seed ^ 0x7f4a7c15);
-    const teams = config.teams.map((t) => ({
-      ...t,
-      car: {
-        ...t.car,
-        paceDeficitPct:
-          t.car.paceDeficitPct +
-          formRng.normal(0, WEEKEND_FORM_SIGMA) +
-          (t.id === config.playerTeamId ? this.difficulty.playerPacePct : 0),
-      },
-    }));
+    const teams = weekendTeams(config);
     const teamById = new Map(teams.map((t) => [t.id, t]));
     const driverById = new Map(config.drivers.map((d) => [d.id, d]));
     this.qualifying = config.grid
@@ -1379,6 +1368,38 @@ export class Race {
     )
       this.phase = "finished";
   }
+}
+
+/**
+ * The teams as they are this weekend: cars suit some circuits and conditions better than
+ * others (weekend form), and on Easy the player's car is a little quicker. Qualifying and the
+ * race share it, so a playable qualifying session sees the same cars as the race.
+ */
+export function weekendTeams(config: RaceConfig): Team[] {
+  const difficulty = DIFFICULTY[config.difficulty ?? "normal"];
+  const formRng = createRng(config.seed ^ 0x7f4a7c15);
+  return config.teams.map((t) => ({
+    ...t,
+    car: {
+      ...t.car,
+      paceDeficitPct:
+        t.car.paceDeficitPct +
+        formRng.normal(0, WEEKEND_FORM_SIGMA) +
+        (t.id === config.playerTeamId ? difficulty.playerPacePct : 0),
+    },
+  }));
+}
+
+/** Track wetness when the weekend's sessions start (the race's starting weather). */
+export function startingWetness(config: RaceConfig): number {
+  const laps = config.laps ?? config.track.laps;
+  const timeline = generateWeather(
+    config.weather ?? "auto",
+    config.track.rainProbability,
+    laps * referenceLap(config.track) * 1.1,
+    createRng(config.seed ^ 0x51ed270b),
+  );
+  return initialWeather(timeline).wetness;
 }
 
 export function createRace(config: RaceConfig): Race {

@@ -34,6 +34,7 @@ export function RecentRaces() {
             laps: String(entry.laps),
             weather: entry.weather,
             difficulty: entry.difficulty ?? "normal",
+            quali: entry.qualifying ?? "auto",
             seed: String(entry.seed),
           });
           return (

@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import { Link, useRouter } from "@/i18n/navigation";
 import type { Moment } from "@/game/moments";
+import type { QualifyingMode } from "@/game/race-options";
 import { useMsg } from "@/i18n/use-msg";
 import { useTranslations } from "next-intl";
 import { TyreBadge } from "./tyre-badge";
@@ -34,12 +35,14 @@ export function RaceResults({
   race,
   teamId,
   moments = [],
+  qualifying = "auto",
   onClose,
 }: {
   race: Race;
   teamId: string | null;
   /** What decided the player's race, from `MomentLog`. */
   moments?: Moment[];
+  qualifying?: QualifyingMode;
   onClose: () => void;
 }) {
   const t = useTranslations("results");
@@ -53,7 +56,7 @@ export function RaceResults({
   const again = () => {
     if (!teamId) return;
     router.push(
-      `/qualifying?${raceQuery({ trackId: race.track.id, teamId, laps: race.laps, weather: race.config.weather ?? "auto", difficulty: race.config.difficulty ?? "normal", seed: newSeed() })}`,
+      `/qualifying?${raceQuery({ trackId: race.track.id, teamId, laps: race.laps, weather: race.config.weather ?? "auto", difficulty: race.config.difficulty ?? "normal", qualifying, seed: newSeed() })}`,
     );
   };
 
