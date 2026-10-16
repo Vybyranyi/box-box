@@ -171,7 +171,8 @@ export type RaceEvent =
   | { type: "finished"; car: number; position: number }
   | { type: "disqualified"; car: number; reason: string };
 
-export type TimedEvent = { time: number; lap: number } & RaceEvent;
+/** An event with when it happened; `seq` is its index in `race.events`. */
+export type TimedEvent = { seq: number; time: number; lap: number } & RaceEvent;
 
 export type RaceCommand =
   | { type: "pit"; driverId: string; compound: Compound }

@@ -1,5 +1,6 @@
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { buttonVariants } from "@/components/ui/button";
+import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 const features = [
@@ -34,9 +35,12 @@ export default function Home() {
           Run the pit wall. Pick a team, read the race and make the strategy
           calls that win or lose it.
         </p>
-        <Button size="lg" disabled>
-          Start race: coming soon
-        </Button>
+        <Link
+          href="/race?team=mclaren"
+          className={buttonVariants({ size: "lg" })}
+        >
+          Watch a race (preview)
+        </Link>
       </section>
 
       <section className="grid gap-4 sm:grid-cols-3">

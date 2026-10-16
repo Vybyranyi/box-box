@@ -407,6 +407,7 @@ export class Race {
   private emit(event: RaceEvent) {
     const timed = {
       ...event,
+      seq: this.events.length,
       time: this.time,
       lap: this.leaderLap,
     } as TimedEvent;
