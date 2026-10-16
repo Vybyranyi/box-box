@@ -1,57 +1,78 @@
 import { DriverPortrait } from "@/components/driver-portrait";
+import { LocaleSwitcher } from "@/components/locale-switcher";
 import { TrackOutline } from "@/components/track-outline";
 import { buttonVariants } from "@/components/ui/button";
 import { drivers, teams, tracks } from "@/data";
 import { createRace, idealCompoundFor } from "@/engine";
+import { translate, type Translate } from "@/game/messages";
 import { teamObjective } from "@/game/objective";
 import { parseRaceParams, withSeed } from "@/game/parse-params";
+import { Link, redirect } from "@/i18n/navigation";
 import { formatLapTime } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { ArrowRight, Target } from "lucide-react";
 import type { Metadata } from "next";
-import Link from "next/link";
-import { redirect } from "next/navigation";
+import { getLocale, getTranslations } from "next-intl/server";
 import { connection } from "next/server";
 import { Suspense } from "react";
 
 export async function generateMetadata({
   searchParams,
-}: PageProps<"/qualifying">): Promise<Metadata> {
+}: PageProps<"/[locale]/qualifying">): Promise<Metadata> {
   const { track } = await searchParams;
-  const found = tracks.find((t) => t.id === track);
-  return { title: `Qualifying · ${found?.name ?? ""} · Box Box` };
+  const [t, tTracks] = await Promise.all([
+    getTranslations("meta"),
+    getTranslations("tracks"),
+  ]);
+  const found = tracks.find((x) => x.id === track);
+  return {
+    title: t("qualifying", { track: found ? tTracks(found.id as never) : "" }),
+  };
 }
 
 export default function QualifyingPage({
   searchParams,
-}: PageProps<"/qualifying">) {
+}: PageProps<"/[locale]/qualifying">) {
   return (
-    <Suspense
-      fallback={
-        <main className="grid min-h-dvh place-items-center font-mono text-sm text-muted-foreground uppercase">
-          Qualifying in progress…
-        </main>
-      }
-    >
+    <Suspense fallback={<Loading />}>
       <Qualifying searchParams={searchParams} />
     </Suspense>
   );
 }
 
+async function Loading() {
+  const t = await getTranslations("qualifying");
+  return (
+    <main className="grid min-h-dvh place-items-center font-mono text-sm text-muted-foreground uppercase">
+      {t("loading")}
+    </main>
+  );
+}
+
 async function Qualifying({
   searchParams,
-}: Pick<PageProps<"/qualifying">, "searchParams">) {
+}: Pick<PageProps<"/[locale]/qualifying">, "searchParams">) {
   const params = parseRaceParams(await searchParams);
   if (params.seed === null) {
     await connection();
-    redirect(
-      `/qualifying?${withSeed(params, crypto.getRandomValues(new Uint32Array(1))[0] % 1_000_000)}`,
-    );
+    const seed = crypto.getRandomValues(new Uint32Array(1))[0] % 1_000_000;
+    redirect({
+      href: `/qualifying?${withSeed(params, seed)}`,
+      locale: await getLocale(),
+    });
   }
+  const seed = params.seed!;
+  const [t, all] = await Promise.all([
+    getTranslations("qualifying"),
+    getTranslations(),
+  ]);
+  const tr = (key: Parameters<typeof translate>[1]) =>
+    translate(all as unknown as Translate, key);
+
   // The race page builds the same race from the same seed, so this grid is the real one.
   const race = createRace({
-    seed: params.seed,
-    track: tracks.find((t) => t.id === params.trackId)!,
+    seed,
+    track: tracks.find((x) => x.id === params.trackId)!,
     teams,
     drivers,
     laps: params.laps,
@@ -59,11 +80,12 @@ async function Qualifying({
     playerTeamId: params.teamId,
   });
   const results = race.qualifying!;
-  const team = teams.find((t) => t.id === params.teamId) ?? null;
+  const team = teams.find((x) => x.id === params.teamId) ?? null;
   const objective = team ? teamObjective(teams, race.track, team.id) : null;
   const pole = results[0].q3 ?? results[0].q2 ?? results[0].q1!;
   const wet = idealCompoundFor(race.weather.wetness) !== "dry";
   const own = results.filter((r) => r.teamId === params.teamId);
+  const query = withSeed(params, seed);
 
   return (
     <main className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-6 px-4 py-6 sm:px-6">
@@ -73,42 +95,48 @@ async function Qualifying({
             href="/play"
             className="font-mono text-xs text-muted-foreground uppercase hover:text-foreground"
           >
-            ← Change setup
+            {t("changeSetup")}
           </Link>
           <h1 className="text-3xl font-black uppercase italic sm:text-4xl">
-            Qualifying
+            {t("title")}
           </h1>
           <p className="text-sm text-muted-foreground">
-            {race.track.circuitName} · {race.laps} laps ·{" "}
-            {wet ? "wet session" : "dry session"}
+            {t("session", {
+              circuit: race.track.circuitName,
+              laps: race.laps,
+              wet: String(wet),
+            })}
           </p>
         </div>
-        <TrackOutline
-          track={race.track}
-          className="h-20 w-28 text-foreground/70"
-        />
+        <div className="flex items-center gap-4">
+          <TrackOutline
+            track={race.track}
+            className="h-20 w-28 text-foreground/70"
+          />
+          <LocaleSwitcher query={query} />
+        </div>
       </header>
 
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_20rem]">
         <section
           className="overflow-x-auto rounded-xl border bg-card"
-          aria-label="Qualifying classification"
+          aria-label={t("tableLabel")}
         >
           <table className="w-full min-w-[34rem] text-sm">
             <thead className="border-b text-left text-[11px] text-muted-foreground uppercase">
               <tr>
-                <th className="w-10 px-3 py-2 text-right">Pos</th>
-                <th className="px-2 py-2">Driver</th>
+                <th className="w-10 px-3 py-2 text-right">{t("pos")}</th>
+                <th className="px-2 py-2">{t("driver")}</th>
                 <th className="px-2 py-2 text-right">Q1</th>
                 <th className="px-2 py-2 text-right">Q2</th>
                 <th className="px-2 py-2 text-right">Q3</th>
-                <th className="px-3 py-2 text-right">Gap</th>
+                <th className="px-3 py-2 text-right">{t("gap")}</th>
               </tr>
             </thead>
             <tbody className="font-mono">
               {results.map((r) => {
                 const driver = drivers.find((d) => d.id === r.driverId)!;
-                const t = teams.find((x) => x.id === r.teamId)!;
+                const rowTeam = teams.find((x) => x.id === r.teamId)!;
                 const best =
                   r.reached === 3 ? r.q3 : r.reached === 2 ? r.q2 : r.q1;
                 const mine = r.teamId === params.teamId;
@@ -129,7 +157,7 @@ async function Qualifying({
                       <span className="flex items-center gap-2 font-sans">
                         <span
                           className="h-4 w-1 rounded-full"
-                          style={{ background: t.color }}
+                          style={{ background: rowTeam.color }}
                         />
                         <b className="font-mono">{driver.code}</b>
                         <span className="hidden text-muted-foreground sm:inline">
@@ -152,7 +180,7 @@ async function Qualifying({
                     ))}
                     <td className="px-3 py-1.5 text-right text-muted-foreground">
                       {r.position === 1
-                        ? "POLE"
+                        ? t("pole")
                         : best !== null
                           ? `+${(best - pole).toFixed(3)}`
                           : ""}
@@ -171,7 +199,7 @@ async function Qualifying({
               style={{ borderTopColor: team.color, borderTopWidth: 4 }}
             >
               <h2 className="text-xs font-semibold text-muted-foreground uppercase">
-                {team.shortName} on the grid
+                {t("onGrid", { team: team.shortName })}
               </h2>
               {own.map((r) => {
                 const driver = drivers.find((d) => d.id === r.driverId)!;
@@ -191,20 +219,20 @@ async function Qualifying({
               })}
               <div className="rounded-lg bg-muted p-3">
                 <p className="flex items-center gap-1.5 text-[11px] font-semibold text-muted-foreground uppercase">
-                  <Target className="size-3.5" /> Objective
+                  <Target className="size-3.5" /> {t("objective")}
                 </p>
-                <p className="font-bold">{objective.text}</p>
+                <p className="font-bold">{tr(objective.text)}</p>
               </div>
             </section>
           )}
           <Link
-            href={`/race?${withSeed(params, params.seed)}`}
+            href={`/race?${query}`}
             className={cn(
               buttonVariants({ size: "lg" }),
               "h-11 font-bold uppercase",
             )}
           >
-            To the grid <ArrowRight />
+            {t("toGrid")} <ArrowRight />
           </Link>
         </aside>
       </div>

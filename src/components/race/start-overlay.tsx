@@ -5,7 +5,9 @@ import { Button } from "@/components/ui/button";
 import { idealCompoundFor, type Compound, type Race } from "@/engine";
 import { suggestedStart } from "@/game/pit-wall";
 import { cn } from "@/lib/utils";
-import Link from "next/link";
+import { Link } from "@/i18n/navigation";
+import { useMsg } from "@/i18n/use-msg";
+import { useTranslations } from "next-intl";
 import { useState } from "react";
 import { TyreBadge } from "./tyre-badge";
 
@@ -22,6 +24,9 @@ export function StartOverlay({
   teamId: string;
   onStart: (tyres: Record<string, Compound>) => void;
 }) {
+  const t = useTranslations("start");
+  const tTracks = useTranslations("tracks");
+  const translate = useMsg();
   const cars = race.cars
     .filter((c) => c.teamId === teamId)
     .sort((a, b) => a.gridPosition - b.gridPosition);
@@ -41,17 +46,16 @@ export function StartOverlay({
       <div className="flex w-full max-w-md flex-col gap-4 rounded-2xl border bg-card p-5 shadow-2xl">
         <div>
           <p className="font-mono text-xs text-muted-foreground uppercase">
-            {race.track.name} · {race.laps} laps ·{" "}
-            {wet ? "wet track" : "dry track"} · rain risk{" "}
-            {Math.round(race.track.rainProbability * 100)}%
+            {t("subtitle", {
+              track: tTracks(race.track.id as never),
+              laps: race.laps,
+              wet: String(wet),
+              risk: Math.round(race.track.rainProbability * 100),
+            })}
           </p>
-          <h2 className="text-2xl font-black uppercase italic">
-            Starting tyres
-          </h2>
+          <h2 className="text-2xl font-black uppercase italic">{t("title")}</h2>
           {race.requireTwoCompounds && !wet && (
-            <p className="text-xs text-muted-foreground">
-              Dry race: each car must use two different compounds.
-            </p>
+            <p className="text-xs text-muted-foreground">{t("twoCompounds")}</p>
           )}
         </div>
 
@@ -68,13 +72,13 @@ export function StartOverlay({
                 {race.driver(car).lastName}
               </p>
               <p className="truncate text-[11px] text-muted-foreground">
-                {advice[car.driverId].summary}
+                {translate(advice[car.driverId].summary)}
               </p>
             </div>
             <div
               className="flex gap-1"
               role="radiogroup"
-              aria-label={`${car.code} starting tyre`}
+              aria-label={t("tyreGroup", { car: car.code })}
             >
               {options.map((c) => (
                 <button
@@ -102,16 +106,16 @@ export function StartOverlay({
           className="font-bold uppercase"
           onClick={() => onStart(tyres)}
         >
-          Lights out
+          {t("lightsOut")}
         </Button>
         <p className="text-center text-xs text-muted-foreground">
-          First time?{" "}
+          {t("firstTime")}{" "}
           <Link
             href="/how-to-play"
             target="_blank"
             className="underline hover:text-foreground"
           >
-            How to play
+            {t("howTo")}
           </Link>
         </p>
       </div>

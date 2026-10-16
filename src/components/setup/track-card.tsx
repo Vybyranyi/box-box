@@ -1,6 +1,9 @@
+"use client";
+
 import { TrackOutline } from "@/components/track-outline";
 import type { CalendarRound, Track } from "@/data/types";
 import { cn } from "@/lib/utils";
+import { useTranslations } from "next-intl";
 
 export function TrackCard({
   track,
@@ -15,6 +18,8 @@ export function TrackCard({
   selected: boolean;
   onSelect: () => void;
 }) {
+  const t = useTranslations("setup");
+  const tTracks = useTranslations("tracks");
   return (
     <button
       type="button"
@@ -29,12 +34,14 @@ export function TrackCard({
         <span>R{round.round}</span>
         {status === "next" && (
           <span className="rounded bg-primary/20 px-1 text-primary">
-            Next GP
+            {t("nextGp")}
           </span>
         )}
-        {status === "raced" && <span>Raced</span>}
+        {status === "raced" && <span>{t("raced")}</span>}
       </div>
-      <h3 className="truncate text-sm font-bold uppercase">{track.name}</h3>
+      <h3 className="truncate text-sm font-bold uppercase">
+        {tTracks(track.id as never)}
+      </h3>
       <TrackOutline
         track={track}
         className={cn(
@@ -42,11 +49,13 @@ export function TrackCard({
           selected ? "text-primary" : "text-foreground/80",
         )}
       />
-      <div className="flex flex-wrap gap-1 font-mono text-[10px] text-muted-foreground">
-        <span>{track.laps} laps</span>·
-        <span>Deg {track.tyreDegradation}/5</span>·
-        <span>Ovt {track.overtakingDifficulty}/5</span>
-      </div>
+      <p className="font-mono text-[10px] text-muted-foreground">
+        {t("trackStats", {
+          laps: track.laps,
+          deg: track.tyreDegradation,
+          ovt: track.overtakingDifficulty,
+        })}
+      </p>
     </button>
   );
 }

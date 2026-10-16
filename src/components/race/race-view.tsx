@@ -13,7 +13,9 @@ import { saveToHistory } from "@/game/history";
 import { gradeRace } from "@/game/objective";
 import { DEFAULT_SETTINGS, type Settings } from "@/game/race-options";
 import { useStored } from "@/lib/storage";
-import { describeEvent, type FeedItem } from "@/game/event-text";
+import { useTranslations } from "next-intl";
+import { describeEvent, ENGINEER, type FeedItem } from "@/game/event-text";
+import { msg, tyresPlural, type Msg } from "@/game/messages";
 import { recommendedCompound } from "@/game/pit-wall";
 import { radioFor } from "@/game/radio";
 import { RaceRunner, SPEEDS, type Speed } from "@/game/race-runner";
@@ -47,14 +49,6 @@ export type RaceSetup = {
 /** How often the React side (tower, panels) refreshes; the map redraws every frame. */
 const UI_REFRESH_MS = 250;
 const FEED_LENGTH = 120;
-const COMPOUND_NAME: Record<Compound, string> = {
-  soft: "softs",
-  medium: "mediums",
-  hard: "hards",
-  intermediate: "inters",
-  wet: "wets",
-};
-
 function createRunner(
   setup: RaceSetup,
   startingTyres?: Record<string, Compound>,
@@ -84,6 +78,7 @@ function feedItems(
 }
 
 export function RaceView({ setup }: { setup: RaceSetup }) {
+  const t = useTranslations();
   const teamId = setup.playerTeamId;
   const [runner, setRunner] = useState(() => {
     const r = createRunner(setup);
@@ -153,7 +148,7 @@ export function RaceView({ setup }: { setup: RaceSetup }) {
         grade: report.grade,
         score: report.score,
         points: report.points,
-        objective: report.objective.text,
+        objective: report.objective.text.key,
         met: report.met,
         finishes: report.results.map((r) => ({
           code: r.code,
@@ -219,17 +214,17 @@ export function RaceView({ setup }: { setup: RaceSetup }) {
     setRunning(true);
   };
 
-  const pushLocalRadio = (text: string) => {
+  const pushLocalRadio = (message: Msg) => {
     const color = teamId
-      ? teams.find((t) => t.id === teamId)?.color
+      ? teams.find((x) => x.id === teamId)?.color
       : undefined;
     const item: FeedItem = {
       id: localMessageId.current--,
       lap: Math.min(race.leaderLap + 1, race.laps),
-      text,
+      message,
       tone: "info",
       kind: "radio",
-      from: "Engineer",
+      from: ENGINEER,
       color,
     };
     setFeed((f) => [item, ...f].slice(0, FEED_LENGTH));
@@ -243,15 +238,16 @@ export function RaceView({ setup }: { setup: RaceSetup }) {
       const car = race.carByDriver(command.driverId);
       if (car)
         pushLocalRadio(
-          `Box, box. ${car.code}, box this lap for ${COMPOUND_NAME[command.compound]}.`,
+          msg("radio.boxBox", {
+            car: car.code,
+            compound: tyresPlural(command.compound),
+          }),
         );
     } else if (command.type === "cancel-pit") {
-      pushLocalRadio("Stay out, stay out. Cancel the stop.");
+      pushLocalRadio(msg("radio.cancelStop"));
     } else if (command.type === "team-order" && command.order !== "free") {
       pushLocalRadio(
-        command.order === "swap"
-          ? "Team order: swap positions when you're close."
-          : "Hold positions, no fighting please.",
+        msg(command.order === "swap" ? "radio.orderSwap" : "radio.orderHold"),
       );
     }
   };
@@ -322,7 +318,7 @@ export function RaceView({ setup }: { setup: RaceSetup }) {
   return (
     <main className="flex min-h-dvh flex-col gap-3 p-3 lg:h-dvh">
       <RaceHeader
-        trackName={race.track.name}
+        trackName={t(`tracks.${race.track.id}` as never)}
         circuitName={race.track.circuitName}
         raceTime={race.time}
         status={race.finished ? "finished" : race.trackStatus}
@@ -371,17 +367,17 @@ export function RaceView({ setup }: { setup: RaceSetup }) {
               onClick={() => setShowResults(true)}
               className="absolute top-3 left-1/2 z-10 -translate-x-1/2 rounded-lg bg-primary px-4 py-2 text-sm font-bold text-primary-foreground uppercase shadow-lg"
             >
-              Race results
+              {t("race.results")}
             </button>
           )}
           {paused && !alert && started && !race.finished && (
             <p className="absolute top-3 left-1/2 -translate-x-1/2 rounded-md bg-background/90 px-3 py-1 font-mono text-xs font-bold uppercase">
-              Paused
+              {t("race.paused")}
             </p>
           )}
           {teamId && (
             <p className="absolute bottom-2 left-3 hidden font-mono text-[10px] text-muted-foreground lg:block">
-              Space pause · 1–5 speed · B box · Q/E switch car · Esc dismiss
+              {t("race.hotkeys")}
             </p>
           )}
         </div>

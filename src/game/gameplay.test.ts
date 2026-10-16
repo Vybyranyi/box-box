@@ -1,8 +1,9 @@
+import { tr } from "./test-i18n";
 import { drivers, getTrack, teams } from "@/data";
 import { createRace, type Race } from "@/engine";
 import { describe, expect, it } from "vitest";
 import { alertFor } from "./alerts";
-import { describeEvent } from "./event-text";
+import { describeEvent, ENGINEER } from "./event-text";
 import {
   estimatedWear,
   lapsLeftOnTyre,
@@ -57,8 +58,8 @@ describe("pit wall advice", () => {
     const car = norris(dry);
     expect(["medium", "hard", "soft"]).toContain(recommendedCompound(dry, car));
     expect(needsSecondCompound(dry, car)).toBe(true);
-    expect(planSummary(dry, car)).toMatch(/^Plan: box ~L\d+ for \w+s/);
-    expect(suggestedStart(dry, car).summary).toMatch(
+    expect(tr(planSummary(dry, car))).toMatch(/^Plan: box ~L\d+ for \w+/);
+    expect(tr(suggestedStart(dry, car).summary)).toMatch(
       /^\d-stop: \w+ to L\d+, then \w+/,
     );
 
@@ -66,7 +67,7 @@ describe("pit wall advice", () => {
     expect(["intermediate", "wet"]).toContain(
       recommendedCompound(wet, norris(wet)),
     );
-    expect(suggestedStart(wet, norris(wet)).summary).toMatch(/^Wet start/);
+    expect(tr(suggestedStart(wet, norris(wet)).summary)).toMatch(/^Wet start/);
   });
 });
 
@@ -103,7 +104,7 @@ describe("alerts, radio and feed over a full race", () => {
     for (const item of radio) {
       expect(item.kind).toBe("radio");
       expect(
-        item.from === "Engineer" || ["NOR", "PIA"].includes(item.from!),
+        item.from === ENGINEER || ["NOR", "PIA"].includes(item.from!),
       ).toBe(true);
     }
     expect(spectatorRadio).toBe(0);
@@ -114,7 +115,7 @@ describe("alerts, radio and feed over a full race", () => {
       if (e.type !== "fastest-lap") continue;
       expect(e.lapTime).toBeLessThan(200);
       const line = describeEvent(race, e);
-      if (line) expect(line.text).toMatch(/\d:\d{2}\.\d{3}$/);
+      if (line) expect(tr(line.message)).toMatch(/\d:\d{2}\.\d{3}$/);
     }
   });
 

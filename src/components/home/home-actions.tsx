@@ -3,12 +3,13 @@
 import { Button, buttonVariants } from "@/components/ui/button";
 import { calendar, getTrack, meta, teams } from "@/data";
 import { lapsFor, newSeed, raceQuery } from "@/game/race-options";
+import { Link, useRouter } from "@/i18n/navigation";
 import { cn } from "@/lib/utils";
 import { BookOpen, Flag, Shuffle } from "lucide-react";
-import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 
 export function HomeActions() {
+  const t = useTranslations("home");
   const router = useRouter();
 
   const quickRace = () => {
@@ -31,7 +32,7 @@ export function HomeActions() {
           "h-11 px-5 text-base font-bold",
         )}
       >
-        <Flag /> Start a race
+        <Flag /> {t("start")}
       </Link>
       <Button
         size="lg"
@@ -39,7 +40,7 @@ export function HomeActions() {
         className="h-11 px-5 text-base"
         onClick={quickRace}
       >
-        <Shuffle /> Quick race
+        <Shuffle /> {t("quick")}
       </Button>
       <Link
         href="/how-to-play"
@@ -48,7 +49,7 @@ export function HomeActions() {
           "h-11 px-5 text-base",
         )}
       >
-        <BookOpen /> How to play
+        <BookOpen /> {t("howTo")}
       </Link>
     </div>
   );

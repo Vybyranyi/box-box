@@ -22,17 +22,17 @@ describe("buildTower", () => {
     expect(rows.map((row) => row.position)).toEqual(
       Array.from({ length: 22 }, (_, i) => i + 1),
     );
-    expect(rows[0].gap).toBe("LEADER");
-    expect(rows[1].gap).toMatch(/^\+\d+\.\d{3}$/);
+    expect(rows[0].gap).toEqual({ type: "label", label: "leader" });
+    expect(rows[1].gap.type).toBe("time");
   });
 
   it("shows pit stops, retirements and the winner", () => {
     const r = race();
     r.run();
     const rows = buildTower(r);
-    expect(rows[0].gap).toBe("WINNER");
+    expect(rows[0].gap).toEqual({ type: "label", label: "winner" });
     for (const row of rows.filter((x) => x.state === "retired"))
-      expect(row.gap).toBe("DNF");
+      expect(row.gap).toEqual({ type: "label", label: "dnf" });
     expect(rows.some((row) => row.stops > 0)).toBe(true);
   });
 });
@@ -46,9 +46,9 @@ describe("describeEvent", () => {
       .filter((x) => x !== null);
     expect(lines[0]).toMatchObject({
       lap: 1,
-      text: "Lights out and away we go!",
+      message: { key: "control.start" },
     });
-    expect(lines.some((l) => l.text.includes("pits for"))).toBe(true);
+    expect(lines.some((l) => l.message.key === "control.pitEntry")).toBe(true);
     expect(lines.every((l) => l.lap >= 1 && l.lap <= r.laps)).toBe(true);
     expect(new Set(lines.map((l) => l.id)).size).toBe(lines.length);
   });

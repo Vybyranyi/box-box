@@ -1,5 +1,4 @@
 import type { Compound, Race } from "@/engine";
-import { formatGap } from "@/lib/format";
 
 export type TowerRow = {
   index: number;
@@ -10,10 +9,10 @@ export type TowerRow = {
   teamColor: string;
   teamId: string;
   isPlayer: boolean;
-  /** Gap to the leader, already formatted. */
-  gap: string;
-  /** Interval to the car ahead, already formatted. */
-  interval: string;
+  /** Gap to the leader. */
+  gap: TowerGap;
+  /** Interval to the car ahead. */
+  interval: TowerGap;
   compound: Compound;
   tyreAge: number;
   wear: number;
@@ -26,7 +25,11 @@ export type TowerRow = {
   fastestLap: boolean;
 };
 
-const lapsText = (n: number) => `+${n} LAP${n > 1 ? "S" : ""}`;
+/** What the gap column shows; the UI formats and translates it. */
+export type TowerGap =
+  | { type: "time"; seconds: number }
+  | { type: "laps"; laps: number }
+  | { type: "label"; label: "leader" | "winner" | "pit" | "dnf" | "none" };
 
 /** Snapshot of the classification for the timing tower. */
 export function buildTower(race: Race): TowerRow[] {
@@ -46,18 +49,25 @@ export function buildTower(race: Race): TowerRow[] {
               : "racing";
 
     const special =
-      state === "retired" ? "DNF" : state === "pit" ? "PIT" : null;
-    let gap: string;
-    let interval: string;
+      state === "retired" ? "dnf" : state === "pit" ? "pit" : null;
+    let gap: TowerGap;
+    let interval: TowerGap;
     if (special) {
-      gap = interval = special;
+      gap = interval = { type: "label", label: special };
     } else if (car.position === 1) {
-      gap = interval = state === "finished" ? "WINNER" : "LEADER";
+      gap = interval = {
+        type: "label",
+        label: state === "finished" ? "winner" : "leader",
+      };
     } else if (car.lapsDown > 0) {
-      gap = interval = lapsText(car.lapsDown);
+      gap = interval = { type: "laps", laps: car.lapsDown };
     } else {
-      gap = car.gapToLeader === null ? "-" : formatGap(car.gapToLeader);
-      interval = car.interval === null ? gap : formatGap(car.interval);
+      gap =
+        car.gapToLeader === null
+          ? { type: "label", label: "none" }
+          : { type: "time", seconds: car.gapToLeader };
+      interval =
+        car.interval === null ? gap : { type: "time", seconds: car.interval };
     }
 
     return {

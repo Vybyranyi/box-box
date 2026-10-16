@@ -35,7 +35,6 @@ export function TyreBadge({
         borderColor: TYRE_COLORS[compound],
         color: TYRE_COLORS[compound],
       }}
-      title={compound}
     >
       {LETTER[compound]}
     </span>

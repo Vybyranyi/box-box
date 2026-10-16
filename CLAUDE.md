@@ -1,6 +1,6 @@
 # Box Box
 
-Browser race-strategy manager game set in the 2026 Formula 1 season: the player runs both cars of one team from the pit wall. Single-player, desktop-first, English UI. Not affiliated with Formula 1; no "F1"/"Formula 1" in the game name.
+Browser race-strategy manager game set in the 2026 Formula 1 season: the player runs both cars of one team from the pit wall. Single-player, desktop-first, UI in English and Ukrainian. Not affiliated with Formula 1; no "F1"/"Formula 1" in the game name.
 
 ## Official images
 
@@ -39,6 +39,14 @@ Driver headshots, team logos and car renders come from the formula1.com CDN, and
 - `createRace(config)` returns a `Race`; call `step()` (0.5 s of race time) or `run()`, and `command()` for player decisions. Read state from `race.cars`, `race.order`, `race.events`.
 - Separate random streams for the race, weather, mechanical failures and weekend form, so player choices never change the weather or reliability. Never use `Math.random` in the engine.
 - Calibration constants live at the top of `race.ts`, `tyres.ts` and `strategy.ts`. After changing them, check `npm run sim -- --track <id> --runs 200` and the sanity test (`src/engine/sanity.test.ts`, 500 races).
+
+## Translations (next-intl)
+
+- Locales `en` and `uk`, always in the URL (`/en/...`, `/uk/...`); `src/proxy.ts` redirects bare paths by cookie, then browser language. Routes live under `src/app/[locale]/`.
+- All UI text lives in `messages/en.json` and `messages/uk.json`, which must have identical keys (enforced by `src/game/i18n.test.ts`). Keys are type-checked against `en.json`.
+- Navigation: import `Link`, `useRouter`, `redirect` from `@/i18n/navigation`, never from `next/link` / `next/navigation`, so the locale is kept.
+- Game logic (`src/game`, radio, race control, advice, objectives) never builds display strings: it returns `Msg` (`{ key, values }`, values may be nested `Msg` such as tyre names). Components translate with `useMsg()`; server code with `translate()` and `getTranslations()`.
+- Ukrainian needs ICU plurals (`one`/`few`/`many`/`other`). Driver names and team names stay in Latin script.
 
 ## Workflow
 

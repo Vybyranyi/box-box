@@ -5,6 +5,7 @@ import {
   type Compound,
   type Race,
 } from "@/engine";
+import { msg, tyreName, tyresPlural, type Msg } from "./messages";
 
 /** Wear at which we consider a tyre finished, for "laps left" estimates. */
 export const CLIFF_WEAR = 80;
@@ -62,47 +63,62 @@ export function recommendedCompound(race: Race, car: CarState): Compound {
 }
 
 /** One-line advice from the strategy desk. */
-export function planSummary(race: Race, car: CarState): string {
-  if (car.status === "retired") return "Retired";
-  if (car.status === "finished") return "Finished";
+export function planSummary(race: Race, car: CarState): Msg {
+  if (car.status === "retired") return msg("advice.retired");
+  if (car.status === "finished") return msg("advice.finished");
   const ideal = idealCompoundFor(race.weather.wetness);
   const fitted = isDry(car.tyre.compound) ? "dry" : car.tyre.compound;
   if (ideal !== fitted) {
     return ideal === "dry"
-      ? "Track is dry enough for slicks"
-      : `Conditions call for ${ideal === "wet" ? "full wets" : "inters"}`;
+      ? msg("advice.dryEnough")
+      : msg("advice.callFor", { tyre: tyresPlural(ideal) });
   }
-  if (!isDry(car.tyre.compound)) return "Right tyres for the conditions";
+  if (!isDry(car.tyre.compound)) return msg("advice.rightTyres");
   const plan = race.suggestStrategy(car);
   const next = plan.stints[1];
   if (!next)
-    return needsSecondCompound(race, car)
-      ? "Must still use a second compound"
-      : "Plan: no more stops";
-  const stopLap = plan.stints[0].endLap;
-  return `Plan: box ~L${stopLap} for ${next.compound}s${plan.stints.length > 2 ? `, then ${plan.stints[2].compound}s` : ""}`;
+    return msg(
+      needsSecondCompound(race, car)
+        ? "advice.mustSecond"
+        : "advice.noMoreStops",
+    );
+  const lap = plan.stints[0].endLap;
+  const then = plan.stints[2];
+  return then
+    ? msg("advice.planThen", {
+        lap,
+        next: tyresPlural(next.compound),
+        then: tyresPlural(then.compound),
+      })
+    : msg("advice.plan", { lap, next: tyresPlural(next.compound) });
 }
 
 /** Starting tyre advice before the race. */
 export function suggestedStart(
   race: Race,
   car: CarState,
-): { compound: Compound; summary: string } {
+): { compound: Compound; summary: Msg } {
   const ideal = idealCompoundFor(race.weather.wetness);
   if (ideal !== "dry")
     return {
       compound: ideal,
-      summary: `Wet start: ${ideal === "wet" ? "full wets" : "inters"}`,
+      summary: msg("advice.wetStart", { tyre: tyresPlural(ideal) }),
     };
-  const plan = race.suggestStrategy(car, true);
-  const name = (c: string) => c[0].toUpperCase() + c.slice(1);
-  const stints = plan.stints.map((s, i) =>
-    i < plan.stints.length - 1
-      ? `${name(s.compound)} to L${s.endLap}`
-      : name(s.compound),
-  );
-  return {
-    compound: plan.stints[0].compound,
-    summary: `${plan.stints.length - 1}-stop: ${stints.join(", then ")}`,
-  };
+  const [a, b, c] = race.suggestStrategy(car, true).stints;
+  const summary = c
+    ? msg("advice.start2", {
+        a: tyreName(a.compound),
+        al: a.endLap,
+        b: tyreName(b.compound),
+        bl: b.endLap,
+        c: tyreName(c.compound),
+      })
+    : b
+      ? msg("advice.start1", {
+          a: tyreName(a.compound),
+          al: a.endLap,
+          b: tyreName(b.compound),
+        })
+      : msg("advice.start0", { a: tyreName(a.compound) });
+  return { compound: a.compound, summary };
 }

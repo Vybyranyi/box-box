@@ -1,10 +1,11 @@
 import type { Team, Track } from "@/data/types";
 import { carFactor, type ClassifiedResult, type Race } from "@/engine";
+import { msg, type Msg } from "./messages";
 
 export type Objective = {
   /** Team's car rank for this track, 1 = fastest. */
   rank: number;
-  text: string;
+  text: Msg;
   /** Expected finishing positions of the two cars. */
   expected: [number, number];
   met: (results: ClassifiedResult[]) => boolean;
@@ -18,7 +19,7 @@ export type RaceReport = {
   score: number;
   grade: Grade;
   points: number;
-  breakdown: { label: string; value: number }[];
+  breakdown: { label: Msg; value: number }[];
   results: ClassifiedResult[];
 };
 
@@ -40,26 +41,26 @@ export function teamObjective(
 ): Objective {
   const rank = teamRanking(teams, track).findIndex((t) => t.id === teamId) + 1;
   const expected: [number, number] = [rank * 2 - 1, rank * 2];
-  const top = (n: number, text: string) => ({
-    text,
+  const top = (n: number, key: string) => ({
+    text: msg(`objective.${key}`),
     met: (rs: ClassifiedResult[]) => best(rs) <= n,
   });
 
-  let goal: { text: string; met: (rs: ClassifiedResult[]) => boolean };
-  if (rank === 1) goal = top(1, "Win the race");
-  else if (rank <= 3) goal = top(3, "Finish on the podium");
-  else if (rank === 4) goal = top(6, "Finish in the top six");
+  let goal: { text: Msg; met: (rs: ClassifiedResult[]) => boolean };
+  if (rank === 1) goal = top(1, "win");
+  else if (rank <= 3) goal = top(3, "podium");
+  else if (rank === 4) goal = top(6, "topSix");
   else if (rank <= 6)
     goal = {
-      text: "Get both cars into the points",
+      text: msg("objective.bothPoints"),
       met: (rs) =>
         rs.filter((r) => isClassified(r) && r.position <= 10).length === 2,
     };
-  else if (rank <= 8) goal = top(10, "Score points");
-  else if (rank === 9) goal = top(12, "Finish in the top twelve");
+  else if (rank <= 8) goal = top(10, "points");
+  else if (rank === 9) goal = top(12, "topTwelve");
   else
     goal = {
-      text: "Bring both cars home",
+      text: msg("objective.bothHome"),
       met: (rs) => rs.every(isClassified),
     };
 
@@ -87,28 +88,32 @@ export function gradeRace(race: Race, teamId: string): RaceReport {
   const actualAvg =
     finishPositions.reduce((s, p) => s + p, 0) / finishPositions.length;
 
-  const breakdown: { label: string; value: number }[] = [
+  const breakdown: { label: Msg; value: number }[] = [
     {
-      label: met ? "Objective achieved" : "Objective missed",
+      label: msg(
+        met
+          ? "results.breakdown.objectiveMet"
+          : "results.breakdown.objectiveMissed",
+      ),
       value: met ? 60 : 25,
     },
     {
-      label: "Result vs expectation",
+      label: msg("results.breakdown.vsExpectation"),
       value: Math.round(
         Math.max(-30, Math.min(30, (expectedAvg - actualAvg) * 6)),
       ),
     },
   ];
   if (results.some((r) => r.position === 1 && r.status === "finished"))
-    breakdown.push({ label: "Race win", value: 10 });
+    breakdown.push({ label: msg("results.breakdown.win"), value: 10 });
   else if (results.some((r) => r.position <= 3 && isClassified(r)))
-    breakdown.push({ label: "Podium", value: 5 });
+    breakdown.push({ label: msg("results.breakdown.podium"), value: 5 });
   if (race.fastestLap && race.cars[race.fastestLap.car].teamId === teamId)
-    breakdown.push({ label: "Fastest lap", value: 5 });
+    breakdown.push({ label: msg("results.breakdown.fastestLap"), value: 5 });
   if (results.every((r) => isClassified(r) && r.position <= 10))
-    breakdown.push({ label: "Double points finish", value: 5 });
+    breakdown.push({ label: msg("results.breakdown.doublePoints"), value: 5 });
   if (results.some((r) => r.status === "dsq"))
-    breakdown.push({ label: "Disqualification", value: -40 });
+    breakdown.push({ label: msg("results.breakdown.dsq"), value: -40 });
 
   const score = Math.max(
     0,

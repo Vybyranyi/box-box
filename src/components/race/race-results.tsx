@@ -8,8 +8,9 @@ import { newSeed, raceQuery } from "@/game/race-options";
 import { formatGap, formatLapTime, formatRaceTime } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { Check, RotateCcw, Settings2, X } from "lucide-react";
-import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { Link, useRouter } from "@/i18n/navigation";
+import { useMsg } from "@/i18n/use-msg";
+import { useTranslations } from "next-intl";
 import { TyreBadge } from "./tyre-badge";
 
 const GRADE_STYLE: Record<Grade, string> = {
@@ -18,14 +19,6 @@ const GRADE_STYLE: Record<Grade, string> = {
   B: "text-sky-400",
   C: "text-orange-400",
   D: "text-red-400",
-};
-
-const GRADE_LINE: Record<Grade, string> = {
-  S: "Masterclass from the pit wall.",
-  A: "A strong weekend for the team.",
-  B: "Solid job, a few points left on the table.",
-  C: "Not the result we came for.",
-  D: "One to forget. Debrief in the motorhome.",
 };
 
 /** Full-screen results after the chequered flag. */
@@ -38,6 +31,8 @@ export function RaceResults({
   teamId: string | null;
   onClose: () => void;
 }) {
+  const t = useTranslations("results");
+  const translate = useMsg();
   const router = useRouter();
   const report = teamId ? gradeRace(race, teamId) : null;
   const results = race.classification();
@@ -55,24 +50,27 @@ export function RaceResults({
     <div
       className="fixed inset-0 z-30 overflow-y-auto bg-background/95 backdrop-blur"
       role="dialog"
-      aria-label="Race results"
+      aria-label={t("title")}
     >
       <div className="mx-auto flex max-w-5xl flex-col gap-6 px-4 py-8 sm:px-6">
         <header className="flex items-start justify-between gap-4">
           <div>
             <p className="font-mono text-xs text-muted-foreground uppercase">
-              {race.track.circuitName} · {race.laps} laps ·{" "}
-              {winner.totalTime ? formatRaceTime(winner.totalTime) : ""}
+              {t("subtitle", {
+                circuit: race.track.circuitName,
+                laps: race.laps,
+                time: winner.totalTime ? formatRaceTime(winner.totalTime) : "",
+              })}
             </p>
             <h1 className="text-3xl font-black uppercase italic sm:text-4xl">
-              Race results
+              {t("title")}
             </h1>
           </div>
           <Button
             variant="ghost"
             size="icon"
             onClick={onClose}
-            aria-label="Back to the track"
+            aria-label={t("close")}
           >
             <X />
           </Button>
@@ -90,12 +88,12 @@ export function RaceResults({
                 {report.grade}
               </span>
               <span className="mt-1 font-mono text-sm text-muted-foreground">
-                {report.score} pts
+                {t("score", { score: report.score })}
               </span>
             </div>
             <div className="flex flex-col gap-3 rounded-2xl border bg-card p-5">
               <p className="text-lg font-semibold">
-                {GRADE_LINE[report.grade]}
+                {t(`grade.${report.grade}`)}
               </p>
               <p
                 className={cn(
@@ -108,15 +106,19 @@ export function RaceResults({
                 ) : (
                   <X className="size-4" />
                 )}
-                Objective: {report.objective.text}
+                {t("objective", {
+                  objective: translate(report.objective.text),
+                })}
               </p>
               <ul className="grid gap-1 text-sm sm:grid-cols-2">
                 {report.breakdown.map((b) => (
                   <li
-                    key={b.label}
+                    key={b.label.key}
                     className="flex justify-between rounded bg-muted px-2 py-1"
                   >
-                    <span className="text-muted-foreground">{b.label}</span>
+                    <span className="text-muted-foreground">
+                      {translate(b.label)}
+                    </span>
                     <span
                       className={cn("font-mono", b.value < 0 && "text-red-400")}
                     >
@@ -147,9 +149,9 @@ export function RaceResults({
                         <p className="flex items-center gap-1 font-mono text-[11px] text-muted-foreground">
                           P{r.gridPosition} →{" "}
                           {r.status === "dnf"
-                            ? "DNF"
+                            ? t("dnf")
                             : r.status === "dsq"
-                              ? "DSQ"
+                              ? t("dsq")
                               : `P${r.position}`}
                           {r.status !== "dnf" &&
                             r.status !== "dsq" &&
@@ -190,37 +192,37 @@ export function RaceResults({
         <div className="flex flex-wrap gap-2">
           {teamId && (
             <Button size="lg" onClick={again} className="font-bold">
-              <RotateCcw /> Race again
+              <RotateCcw /> {t("again")}
             </Button>
           )}
           <Link
             href="/play"
             className={buttonVariants({ size: "lg", variant: "secondary" })}
           >
-            <Settings2 /> New setup
+            <Settings2 /> {t("newSetup")}
           </Link>
           <Link
             href="/"
             className={buttonVariants({ size: "lg", variant: "ghost" })}
           >
-            Home
+            {t("home")}
           </Link>
         </div>
 
         <section
           className="overflow-x-auto rounded-xl border bg-card"
-          aria-label="Classification"
+          aria-label={t("classification")}
         >
           <table className="w-full min-w-[40rem] text-sm">
             <thead className="border-b text-left text-[11px] text-muted-foreground uppercase">
               <tr>
-                <th className="w-10 px-3 py-2 text-right">Pos</th>
-                <th className="px-2 py-2">Driver</th>
-                <th className="px-2 py-2 text-right">Grid</th>
-                <th className="px-2 py-2 text-right">Time / gap</th>
-                <th className="px-2 py-2">Tyres</th>
-                <th className="px-2 py-2 text-right">Best lap</th>
-                <th className="px-3 py-2 text-right">Pts</th>
+                <th className="w-10 px-3 py-2 text-right">{t("pos")}</th>
+                <th className="px-2 py-2">{t("driver")}</th>
+                <th className="px-2 py-2 text-right">{t("grid")}</th>
+                <th className="px-2 py-2 text-right">{t("time")}</th>
+                <th className="px-2 py-2">{t("tyres")}</th>
+                <th className="px-2 py-2 text-right">{t("bestLap")}</th>
+                <th className="px-3 py-2 text-right">{t("pts")}</th>
               </tr>
             </thead>
             <tbody className="font-mono">
@@ -240,7 +242,7 @@ export function RaceResults({
                       {r.status === "dnf"
                         ? "-"
                         : r.status === "dsq"
-                          ? "DSQ"
+                          ? t("dsq")
                           : r.position}
                     </td>
                     <td className="px-2 py-1.5">
@@ -264,10 +266,10 @@ export function RaceResults({
                         : r.status === "finished" && r.gap !== null
                           ? formatGap(r.gap)
                           : r.status === "lapped"
-                            ? `+${winner.laps - r.laps} lap${winner.laps - r.laps > 1 ? "s" : ""}`
+                            ? t("lapped", { laps: winner.laps - r.laps })
                             : r.status === "dnf"
-                              ? `DNF (L${r.laps})`
-                              : "DSQ"}
+                              ? t("dnfAt", { lap: r.laps })
+                              : t("dsq")}
                     </td>
                     <td className="px-2 py-1.5">
                       <span className="flex gap-0.5">

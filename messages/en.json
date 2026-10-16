@@ -1,0 +1,494 @@
+{
+  "meta": {
+    "description": "Run the pit wall. A race strategy game set in the 2026 season.",
+    "play": "New race",
+    "qualifying": "Qualifying · {track}",
+    "howTo": "How to play"
+  },
+  "common": {
+    "back": "← Box Box",
+    "home": "Home",
+    "language": "Language"
+  },
+  "tracks": {
+    "albert_park": "Melbourne",
+    "shanghai": "Shanghai",
+    "suzuka": "Suzuka",
+    "miami": "Miami",
+    "villeneuve": "Montréal",
+    "monaco": "Monaco",
+    "catalunya": "Barcelona",
+    "red_bull_ring": "Spielberg",
+    "silverstone": "Silverstone",
+    "spa": "Spa",
+    "hungaroring": "Budapest",
+    "zandvoort": "Zandvoort",
+    "monza": "Monza",
+    "madring": "Madrid",
+    "baku": "Baku",
+    "sepang": "Sepang",
+    "marina_bay": "Singapore",
+    "americas": "Austin",
+    "rodriguez": "Mexico City",
+    "interlagos": "São Paulo",
+    "vegas": "Las Vegas",
+    "losail": "Lusail",
+    "yas_marina": "Abu Dhabi"
+  },
+  "tyres": {
+    "soft": "Soft",
+    "medium": "Medium",
+    "hard": "Hard",
+    "intermediate": "Intermediate",
+    "wet": "Full wet"
+  },
+  "tyresPlural": {
+    "soft": "softs",
+    "medium": "mediums",
+    "hard": "hards",
+    "intermediate": "inters",
+    "wet": "full wets"
+  },
+  "home": {
+    "season": "{season} season",
+    "tagline": "Run the pit wall. Pick a team, read the race and make the strategy calls that win or lose it.",
+    "start": "Start a race",
+    "quick": "Quick race",
+    "howTo": "How to play",
+    "features": {
+      "grid": {
+        "title": "The 2026 grid",
+        "body": "Every team and driver of the new era, rated on pace, racecraft, tyre management and wet-weather skill."
+      },
+      "circuits": {
+        "title": "Every circuit",
+        "body": "Real track layouts and characteristics: degradation, pit-lane loss, overtaking difficulty, Safety Car odds."
+      },
+      "calls": {
+        "title": "You make the call",
+        "body": "Pit windows, tyre choices, pace modes and team orders, for both of your cars, live."
+      }
+    },
+    "recent": {
+      "title": "Recent races",
+      "replay": "Replay this race with the same seed",
+      "points": "{points} pts",
+      "laps": "{laps} laps"
+    }
+  },
+  "setup": {
+    "chooseTeam": "Choose your team",
+    "chooseRace": "Choose the race",
+    "stepTeam": "Team",
+    "stepRace": "Race",
+    "tier": {
+      "front": "Front runner",
+      "midfield": "Midfield",
+      "pack": "Midfield pack",
+      "back": "Backmarker"
+    },
+    "championship": "P{position} in 2026",
+    "carPace": "Car pace",
+    "reliability": "Reliability",
+    "raced": "Raced",
+    "nextGp": "Next GP",
+    "trackStats": "{laps} laps · Deg {deg}/5 · Ovt {ovt}/5",
+    "distance": "Distance",
+    "distances": {
+      "sprint": "Sprint",
+      "quarter": "25%",
+      "half": "50%",
+      "full": "Full"
+    },
+    "sprintDetail": "10 laps",
+    "lapsCount": "{laps} laps",
+    "mandatoryStop": "Mandatory stop: two dry compounds must be used.",
+    "noMandatoryStop": "No mandatory stop at this distance.",
+    "weather": "Weather",
+    "weathers": {
+      "auto": { "label": "Realistic", "detail": "{risk}% rain risk" },
+      "dry": { "label": "Dry", "detail": "No rain" },
+      "mixed": {
+        "label": "Changeable",
+        "detail": "Rain arrives or clears mid-race"
+      },
+      "wet": { "label": "Wet", "detail": "Rain all race" }
+    },
+    "objectiveAt": "Team objective at {track}",
+    "carRank": "{team} has the {rank, selectordinal, one {#st} two {#nd} few {#rd} other {#th}} fastest car on this kind of track.",
+    "pickTeam": "Pick the team you'll run from the pit wall",
+    "summary": "{track} · {laps} laps · {weather}",
+    "next": "Next",
+    "back": "Team",
+    "qualifying": "Qualifying"
+  },
+  "qualifying": {
+    "title": "Qualifying",
+    "changeSetup": "← Change setup",
+    "session": "{circuit} · {laps} laps · {wet, select, true {wet session} other {dry session}}",
+    "pos": "Pos",
+    "driver": "Driver",
+    "gap": "Gap",
+    "pole": "POLE",
+    "onGrid": "{team} on the grid",
+    "objective": "Objective",
+    "toGrid": "To the grid",
+    "loading": "Qualifying in progress…",
+    "tableLabel": "Qualifying classification"
+  },
+  "race": {
+    "loading": "Warming up the tyres…",
+    "status": {
+      "green": "Green flag",
+      "sc": "Safety Car",
+      "vsc": "Virtual SC",
+      "finished": "Chequered flag"
+    },
+    "wet": "{percent}% wet",
+    "dry": "Dry",
+    "wetnessTitle": "Track wetness",
+    "autoPause": "Auto-pause {enabled, select, true {on} other {off}}",
+    "autoPauseHint": "Pause automatically on Safety Cars, rain and tyre warnings",
+    "pause": "Pause",
+    "resume": "Resume",
+    "speed": "Simulation speed",
+    "howTo": "How to play (opens in a new tab)",
+    "homeTitle": "Back to the home page",
+    "paused": "Paused",
+    "hotkeys": "Space pause · 1–5 speed · B box · Q/E switch car · Esc dismiss",
+    "results": "Race results",
+    "mapLabel": "{track} race map"
+  },
+  "tower": {
+    "label": "Timing tower",
+    "lap": "LAP",
+    "interval": "interval",
+    "leader": "leader",
+    "gapLeader": "LEADER",
+    "gapWinner": "WINNER",
+    "gapPit": "PIT",
+    "gapDnf": "DNF",
+    "gapLaps": "+{laps} {laps, plural, one {LAP} other {LAPS}}",
+    "fastestLap": "Fastest lap"
+  },
+  "car": {
+    "controls": "{driver} controls",
+    "leading": "Leading",
+    "dnf": "DNF",
+    "wearTitle": "Estimated tyre wear",
+    "wear": "~{wear}% · {laps}L left",
+    "noLaps": "No laps yet",
+    "pace": {
+      "label": "Pace mode",
+      "push": "Push",
+      "pushHint": "Faster, but wears tyres ~35% quicker",
+      "balanced": "Balanced",
+      "balancedHint": "Normal race pace",
+      "conserve": "Conserve",
+      "conserveHint": "Slower, tyres last ~30% longer"
+    },
+    "inPitLane": "In the pit lane",
+    "boxThisLap": "Box this lap",
+    "cancel": "Cancel",
+    "box": "Box",
+    "nextTyre": "Tyre for the next stop",
+    "retired": "Retired",
+    "inPits": "In the pits",
+    "finished": "Finished",
+    "last": "Last",
+    "best": "Best",
+    "stops": "Stops",
+    "fastestLap": "Fastest lap"
+  },
+  "pitWall": {
+    "title": "Pit wall · {team}",
+    "orders": "Team orders",
+    "free": "Free to race",
+    "freeHint": "Drivers may fight each other",
+    "hold": "Hold",
+    "holdHint": "No overtaking between teammates",
+    "swap": "Swap",
+    "swapHint": "The car ahead lets its teammate through when they're close",
+    "waitingSwap": "Waiting for the cars to be within 2.5 s…"
+  },
+  "feed": {
+    "label": "Race feed",
+    "title": "Radio & race control",
+    "all": "all",
+    "radio": "radio",
+    "control": "control",
+    "empty": "Nothing yet…",
+    "engineer": "Engineer"
+  },
+  "alertActions": {
+    "box": "Box {car}",
+    "boxBoth": "Box both",
+    "fit": "Fit",
+    "stayOut": "Stay out",
+    "ok": "OK"
+  },
+  "start": {
+    "subtitle": "{track} · {laps} laps · {wet, select, true {wet track} other {dry track}} · rain risk {risk}%",
+    "title": "Starting tyres",
+    "twoCompounds": "Dry race: each car must use two different compounds.",
+    "tyreGroup": "{car} starting tyre",
+    "lightsOut": "Lights out",
+    "firstTime": "First time?",
+    "howTo": "How to play"
+  },
+  "results": {
+    "title": "Race results",
+    "close": "Back to the track",
+    "subtitle": "{circuit} · {laps} laps · {time}",
+    "score": "{score} pts",
+    "grade": {
+      "S": "Masterclass from the pit wall.",
+      "A": "A strong weekend for the team.",
+      "B": "Solid job, a few points left on the table.",
+      "C": "Not the result we came for.",
+      "D": "One to forget. Debrief in the motorhome."
+    },
+    "objective": "Objective: {objective}",
+    "breakdown": {
+      "objectiveMet": "Objective achieved",
+      "objectiveMissed": "Objective missed",
+      "vsExpectation": "Result vs expectation",
+      "win": "Race win",
+      "podium": "Podium",
+      "fastestLap": "Fastest lap",
+      "doublePoints": "Double points finish",
+      "dsq": "Disqualification"
+    },
+    "again": "Race again",
+    "newSetup": "New setup",
+    "home": "Home",
+    "classification": "Classification",
+    "pos": "Pos",
+    "driver": "Driver",
+    "grid": "Grid",
+    "time": "Time / gap",
+    "tyres": "Tyres",
+    "bestLap": "Best lap",
+    "pts": "Pts",
+    "lapped": "+{laps} {laps, plural, one {lap} other {laps}}",
+    "dnfAt": "DNF (L{lap})",
+    "dnf": "DNF",
+    "dsq": "DSQ"
+  },
+  "objective": {
+    "win": "Win the race",
+    "podium": "Finish on the podium",
+    "topSix": "Finish in the top six",
+    "bothPoints": "Get both cars into the points",
+    "points": "Score points",
+    "topTwelve": "Finish in the top twelve",
+    "bothHome": "Bring both cars home"
+  },
+  "advice": {
+    "retired": "Retired",
+    "finished": "Finished",
+    "dryEnough": "Track is dry enough for slicks",
+    "callFor": "Conditions call for {tyre}",
+    "rightTyres": "Right tyres for the conditions",
+    "mustSecond": "Must still use a second compound",
+    "noMoreStops": "Plan: no more stops",
+    "plan": "Plan: box ~L{lap} for {next}",
+    "planThen": "Plan: box ~L{lap} for {next}, then {then}",
+    "wetStart": "Wet start: {tyre}",
+    "start0": "No-stop: {a}",
+    "start1": "1-stop: {a} to L{al}, then {b}",
+    "start2": "2-stop: {a} to L{al}, then {b} to L{bl}, then {c}"
+  },
+  "alert": {
+    "sc": {
+      "title": "Safety Car",
+      "body": "The field slows down: a pit stop now costs about half the usual time."
+    },
+    "vsc": {
+      "title": "Virtual Safety Car",
+      "body": "Everyone is on the delta: a stop now saves several seconds."
+    },
+    "rain": {
+      "title": "Rain is falling",
+      "body": "The track is getting wet. Inters become quicker once it's about 17% wet."
+    },
+    "crossover": {
+      "dry": {
+        "title": "Track is drying",
+        "body": "Slicks are now quicker than inters."
+      },
+      "intermediate": {
+        "title": "Inter conditions",
+        "body": "Inters are now the quickest tyre."
+      },
+      "wet": {
+        "title": "Full wet conditions",
+        "body": "There's standing water: full wets are quickest."
+      }
+    },
+    "tyres": {
+      "title": "{car}: tyres fading",
+      "body": "About {wear}% worn, roughly {laps} laps before they fall off the cliff.",
+      "bodyNoLaps": "About {wear}% worn."
+    },
+    "puncture": {
+      "title": "{car}: puncture!",
+      "body": "He's crawling back to the pits. Choose the tyre to fit."
+    }
+  },
+  "control": {
+    "start": "Lights out and away we go!",
+    "overtake": "{car} passes {on}",
+    "pitEntry": "{car} pits for {compound}",
+    "slowStop": "Slow stop for {car}: {seconds} s",
+    "scDeployed": "Safety Car deployed",
+    "scEnding": "Safety Car in this lap",
+    "vscDeployed": "Virtual Safety Car",
+    "vscEnding": "VSC ending",
+    "green": "Green flag, racing resumes",
+    "rainStart": "Rain is falling",
+    "rainStop": "Rain has stopped",
+    "crash": "{car} crashes out!",
+    "mechanical": "{car} retires with a problem",
+    "puncture": "Puncture for {car}!",
+    "fastestLap": "Fastest lap: {car} {time}",
+    "chequered": "Chequered flag!",
+    "finished": "{car} finishes P{position}",
+    "disqualified": "{car} disqualified: did not use two dry compounds",
+    "teamOrderHold": "Team order: hold positions",
+    "teamOrderSwap": "Team order: swap"
+  },
+  "radio": {
+    "tyreWarning": {
+      "0": "My tyres are going off.",
+      "1": "Rears are starting to go, guys.",
+      "2": "These tyres won't last much longer, {laps} laps maybe.",
+      "3": "Losing grip on the fronts."
+    },
+    "puncture": {
+      "0": "Puncture! I've got a puncture!",
+      "1": "Tyre's gone! Coming in!"
+    },
+    "goodStop": {
+      "0": "Good stop, {seconds} seconds. Let's go.",
+      "1": "{seconds} seconds, nice work boys.",
+      "2": "Clean stop, {seconds}. Out-lap now."
+    },
+    "slowStop": {
+      "0": "Sorry {car}, slow stop: {seconds} seconds.",
+      "1": "Problem on the stop, {seconds} seconds. Head down."
+    },
+    "overtakeMade": {
+      "0": "Yes! Got him.",
+      "1": "Move done.",
+      "2": "Get in!",
+      "3": "That's one more."
+    },
+    "overtaken": {
+      "0": "He's past. Couldn't hold him.",
+      "1": "Lost a place, sorry.",
+      "2": "No grip to defend."
+    },
+    "crash": {
+      "0": "I'm in the wall. Sorry guys.",
+      "1": "I'm out. Lost the rear.",
+      "2": "Big moment... car's done."
+    },
+    "mechanical": {
+      "0": "I've lost power! Stopping the car.",
+      "1": "Something's broken, I have to stop.",
+      "2": "No drive, no drive!"
+    },
+    "fastestLap": "Purple lap, {car}! Fastest of the race.",
+    "sc": {
+      "0": "Safety Car, Safety Car. Stay above delta.",
+      "1": "SC deployed. Box opportunity, thinking about it."
+    },
+    "vsc": "VSC, VSC. Keep the delta positive.",
+    "green": {
+      "0": "Green, green, green. Push now.",
+      "1": "Track is clear. Go, go, go."
+    },
+    "rain": "It's starting to rain at turn {turn}.",
+    "crossover": {
+      "dry": "Track is drying. Slicks are the quicker tyre now.",
+      "intermediate": "It's inter conditions now. Box for inters?",
+      "wet": "Standing water. Full wets are the tyre."
+    },
+    "finish": {
+      "win": "YES! We won! Get in there!",
+      "podium": "P{position}, podium! Great job everyone.",
+      "points": "P{position}. Good points today.",
+      "none": "P{position}. Tough one, we'll come back stronger."
+    },
+    "boxBox": "Box, box. {car}, box this lap for {compound}.",
+    "cancelStop": "Stay out, stay out. Cancel the stop.",
+    "orderSwap": "Team order: swap positions when you're close.",
+    "orderHold": "Hold positions, no fighting please."
+  },
+  "howTo": {
+    "title": "How to play",
+    "intro": "You don't drive. You're the <b>team principal on the pit wall</b>: the cars race on their own, and you make the strategy calls for both of your drivers. When to pit, which tyres to fit, how hard to push. Make better calls than the other teams and you finish higher.",
+    "setup": {
+      "title": "Set up a race",
+      "1": "On the home page press <k>Start a race</k>.",
+      "2": "<b>Pick a team.</b> For your first race take a fast car like <b>Mercedes</b> or <b>McLaren</b>: it's easier to see the effect of your decisions at the front.",
+      "3": "<b>Pick a circuit, distance and weather.</b> Start with <k>Sprint</k> (10 laps) and <k>Dry</k>. The box on the right shows your <b>team objective</b>, the result your bosses expect.",
+      "4": "<b>Qualifying</b> shows where your drivers start. Press <k>To the grid</k>.",
+      "5": "<b>Choose starting tyres</b> for each car (the suggestion under the driver's name is a good default), then <k>Lights out</k>."
+    },
+    "screen": {
+      "title": "Read the race screen",
+      "1": "<b>Left: the timing tower.</b> Positions, the gap to the car ahead (or to the leader), each car's tyre and how many laps it has done on it. Your cars are highlighted. Click any row to follow that car.",
+      "2": "<b>Centre: the map.</b> Dots are cars in their team colours; yours have a white ring. Cars in the pits move along the dashed pit lane.",
+      "3": "<b>Right: your pit wall.</b> One card per driver, the team orders and the radio.",
+      "4": "<b>Top:</b> track status (green / Safety Car), weather, pause and speed. A race at 1× takes as long as a real one, so play at <k>4×</k>–<k>8×</k>: auto-pause stops the race whenever something needs your decision."
+    },
+    "card": {
+      "title": "Your driver card",
+      "1": "<b>P5</b> is the position. <b>▲ +0.8</b> is the gap to the car ahead, <b>▼ +1.2</b> to the car behind.",
+      "2": "<b>The coloured bar</b> is tyre life: full = fresh, it shrinks as the tyres wear and turns red when they're nearly finished. <b>~45% · 8L left</b> means about 45% worn and roughly 8 laps before they fall off a cliff and get very slow.",
+      "3": "<b>Push / Balanced / Conserve</b> is the pace. Push is faster but eats tyres; Conserve is slower but they last longer.",
+      "4": "<b>The five circles</b> choose the tyre for the next stop, and <k>Box</k> calls the car in. It pits when it next crosses the start/finish line. Changed your mind? <k>Cancel</k>.",
+      "5": "<b>Plan: box ~L12 for hards</b> is advice from your strategists. When in doubt, follow it."
+    },
+    "decisions": {
+      "title": "The decisions that win races",
+      "1": "<b>Pit before the tyres die.</b> When the bar goes red, \"laps left\" gets close to zero, or the driver says \"my tyres are going off\", it's time to box. Every stop costs about 20 seconds, so don't stop more than you need.",
+      "2": "<b>Two compounds rule.</b> In a dry race of half distance or more each car must use two different dry tyres (for example medium then hard), so at least one stop is mandatory. Otherwise: disqualified.",
+      "3": "<b>Safety Car = cheap pit stop.</b> When the Safety Car comes out everyone slows down, so a stop costs about half the usual time. The game pauses and offers <k>Box both</k>: if a stop was coming in the next few laps anyway, take it.",
+      "4": "<b>Rain.</b> Watch the wetness % in the header. From about 17% inters are faster than slicks; in heavy rain switch to full wets. When the track dries, go back to slicks. Change too early or too late and you lose lots of time.",
+      "5": "<b>Push at the right moments:</b> to attack the car ahead, to defend, or in the last few laps when the tyres no longer need to last.",
+      "6": "<b>Team orders.</b> <k>Swap</k>: the car ahead lets its faster teammate through when they're close. <k>Hold</k>: your drivers don't fight each other."
+    },
+    "tyres": {
+      "title": "Tyres",
+      "soft": "Fastest, but wears out quickly. Good for short stints and the last few laps.",
+      "medium": "The all-rounder. A safe choice for the start.",
+      "hard": "Slowest, but lasts the longest. Good for a long final stint.",
+      "intermediate": "For a damp track: from about 17% wetness.",
+      "wet": "For heavy rain and standing water: from about 70% wetness."
+    },
+    "results": {
+      "title": "Results",
+      "body": "After the chequered flag you get a grade from <b>S</b> (brilliant) to <b>D</b> (one to forget). It depends on whether you met the team objective, how your cars finished compared with what the car deserved, and bonuses like a podium or the fastest lap. A Williams in 9th is a great result; a Mercedes in 9th is not."
+    },
+    "keys": {
+      "title": "Keyboard shortcuts",
+      "space": "Pause / resume",
+      "speed": "Speed 1× / 2× / 4× / 8× / 16×",
+      "box": "Box the selected car this lap (press again to cancel)",
+      "car": "Select your first / second car",
+      "esc": "Close a pop-up and carry on"
+    },
+    "first": {
+      "title": "Your first race in one minute",
+      "1": "McLaren, any circuit, Sprint, Dry.",
+      "2": "Start on the suggested tyres and press Lights out, then set the speed to 4×.",
+      "3": "Watch the \"Plan\" line on each card. When that lap comes, pick the suggested tyre and press Box.",
+      "4": "If the Safety Car comes out and a stop is near, press Box both.",
+      "5": "In the last 3 laps switch both cars to Push."
+    },
+    "start": "Start a race"
+  }
+}

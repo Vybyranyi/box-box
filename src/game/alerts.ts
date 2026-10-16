@@ -1,11 +1,12 @@
 import type { Race, TimedEvent } from "@/engine";
+import { msg, type Msg } from "./messages";
 import { estimatedWear, lapsLeftOnTyre } from "./pit-wall";
 
 export type RaceAlert = {
   id: number;
   kind: "sc" | "vsc" | "rain" | "crossover" | "tyres" | "puncture";
-  title: string;
-  body: string;
+  title: Msg;
+  body: Msg;
   /** Player car indices the decision is about. */
   cars: number[];
 };
@@ -25,54 +26,29 @@ export function alertFor(
     .map((c) => c.index);
   if (running.length === 0) return null;
   const lapsLeft = race.laps - race.leaderLap;
+  const alert = (
+    kind: RaceAlert["kind"],
+    key: string,
+    cars = running,
+    values?: Msg["values"],
+    bodyKey = "body",
+  ) => ({
+    id: event.seq,
+    kind,
+    title: msg(`alert.${key}.title`, values),
+    body: msg(`alert.${key}.${bodyKey}`, values),
+    cars,
+  });
 
   switch (event.type) {
     case "sc-deployed":
-      return lapsLeft > 3
-        ? {
-            id: event.seq,
-            kind: "sc",
-            title: "Safety Car",
-            body: "The field slows down: a pit stop now costs about half the usual time.",
-            cars: running,
-          }
-        : null;
+      return lapsLeft > 3 ? alert("sc", "sc") : null;
     case "vsc-deployed":
-      return lapsLeft > 2
-        ? {
-            id: event.seq,
-            kind: "vsc",
-            title: "Virtual Safety Car",
-            body: "Everyone is on the delta: a stop now saves several seconds.",
-            cars: running,
-          }
-        : null;
+      return lapsLeft > 2 ? alert("vsc", "vsc") : null;
     case "rain-start":
-      return {
-        id: event.seq,
-        kind: "rain",
-        title: "Rain is falling",
-        body: "The track is getting wet. Inters become quicker once it's about 17% wet.",
-        cars: running,
-      };
+      return alert("rain", "rain");
     case "crossover":
-      return {
-        id: event.seq,
-        kind: "crossover",
-        title:
-          event.to === "dry"
-            ? "Track is drying"
-            : event.to === "intermediate"
-              ? "Inter conditions"
-              : "Full wet conditions",
-        body:
-          event.to === "dry"
-            ? "Slicks are now quicker than inters."
-            : event.to === "intermediate"
-              ? "Inters are now the quickest tyre."
-              : "There's standing water: full wets are quickest.",
-        cars: running,
-      };
+      return alert("crossover", `crossover.${event.to}`);
     case "tyre-warning": {
       const car = race.cars[event.car];
       if (
@@ -82,24 +58,22 @@ export function alertFor(
       )
         return null;
       const left = lapsLeftOnTyre(race, car);
-      return {
-        id: event.seq,
-        kind: "tyres",
-        title: `${car.code}: tyres fading`,
-        body: `About ${Math.round(estimatedWear(race, car))}% worn${left !== null ? `, roughly ${left} laps before they fall off the cliff` : ""}.`,
-        cars: [car.index],
-      };
+      return alert(
+        "tyres",
+        "tyres",
+        [car.index],
+        {
+          car: car.code,
+          wear: Math.round(estimatedWear(race, car)),
+          laps: left ?? 0,
+        },
+        left === null ? "bodyNoLaps" : "body",
+      );
     }
     case "puncture": {
       const car = race.cars[event.car];
       if (car.teamId !== playerTeamId) return null;
-      return {
-        id: event.seq,
-        kind: "puncture",
-        title: `${car.code}: puncture!`,
-        body: "He's crawling back to the pits. Choose the tyre to fit.",
-        cars: [car.index],
-      };
+      return alert("puncture", "puncture", [car.index], { car: car.code });
     }
     default:
       return null;

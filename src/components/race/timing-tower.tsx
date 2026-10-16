@@ -1,7 +1,9 @@
 "use client";
 
-import type { TowerRow } from "@/game/tower";
+import type { TowerGap, TowerRow } from "@/game/tower";
+import { formatGap } from "@/lib/format";
 import { cn } from "@/lib/utils";
+import { useTranslations } from "next-intl";
 import { useState } from "react";
 import { TyreBadge } from "./tyre-badge";
 
@@ -18,16 +20,28 @@ export function TimingTower({
   selectedDriverId: string | null;
   onSelect: (driverId: string) => void;
 }) {
+  const t = useTranslations("tower");
   const [mode, setMode] = useState<"interval" | "leader">("interval");
+  const gapText = (gap: TowerGap) => {
+    if (gap.type === "time") return formatGap(gap.seconds);
+    if (gap.type === "laps") return t("gapLaps", { laps: gap.laps });
+    const labels = {
+      leader: "gapLeader",
+      winner: "gapWinner",
+      pit: "gapPit",
+      dnf: "gapDnf",
+    } as const;
+    return gap.label === "none" ? "-" : t(labels[gap.label]);
+  };
 
   return (
     <section
       className="flex flex-col overflow-hidden rounded-xl border bg-card"
-      aria-label="Timing tower"
+      aria-label={t("label")}
     >
       <header className="flex items-center justify-between border-b px-3 py-2">
         <p className="font-mono text-sm font-bold">
-          LAP{" "}
+          {t("lap")}{" "}
           <span className="text-primary">{Math.min(lap + 1, totalLaps)}</span>
           <span className="text-muted-foreground">/{totalLaps}</span>
         </p>
@@ -44,7 +58,7 @@ export function TimingTower({
                   : "text-muted-foreground hover:text-foreground",
               )}
             >
-              {m}
+              {t(m)}
             </button>
           ))}
         </div>
@@ -75,7 +89,7 @@ export function TimingTower({
                 {row.fastestLap && (
                   <span
                     className="size-1.5 rounded-full bg-[#B138DD]"
-                    title="Fastest lap"
+                    title={t("fastestLap")}
                   />
                 )}
               </span>
@@ -87,7 +101,7 @@ export function TimingTower({
                   row.state === "pit" && "text-chart-2",
                 )}
               >
-                {mode === "interval" ? row.interval : row.gap}
+                {gapText(mode === "interval" ? row.interval : row.gap)}
               </span>
               <span className="flex items-center gap-1">
                 <TyreBadge

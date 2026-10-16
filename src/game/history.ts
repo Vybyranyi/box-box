@@ -16,6 +16,7 @@ export type HistoryEntry = {
   grade: Grade;
   score: number;
   points: number;
+  /** Message key of the team objective, e.g. "objective.podium". */
   objective: string;
   met: boolean;
   /** Finishing positions (or "DNF"/"DSQ") of the team's two cars. */

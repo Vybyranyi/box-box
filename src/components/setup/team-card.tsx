@@ -1,3 +1,5 @@
+"use client";
+
 import { DriverPortrait } from "@/components/driver-portrait";
 import { RemoteImage } from "@/components/remote-image";
 import { getTeamDrivers } from "@/data";
@@ -5,12 +7,14 @@ import { getTeamImage } from "@/data/images";
 import type { Team } from "@/data/types";
 import { cn } from "@/lib/utils";
 import { Check } from "lucide-react";
+import { useTranslations } from "next-intl";
 
-export function tierFor(rank: number): string {
-  if (rank <= 3) return "Front runner";
-  if (rank <= 6) return "Midfield";
-  if (rank <= 9) return "Midfield pack";
-  return "Backmarker";
+/** Message key under setup.tier for a team's overall car rank. */
+export function tierFor(rank: number): "front" | "midfield" | "pack" | "back" {
+  if (rank <= 3) return "front";
+  if (rank <= 6) return "midfield";
+  if (rank <= 9) return "pack";
+  return "back";
 }
 
 export function TeamCard({
@@ -24,6 +28,7 @@ export function TeamCard({
   selected: boolean;
   onSelect: () => void;
 }) {
+  const t = useTranslations("setup");
   const pace = Math.max(5, 100 - team.car.paceDeficitPct * 20);
   return (
     <button
@@ -65,7 +70,8 @@ export function TeamCard({
             {team.shortName}
           </h3>
           <p className="text-xs text-muted-foreground">
-            {tierFor(rank)} · P{team.championship.position} in 2026
+            {t(`tier.${tierFor(rank)}`)} ·{" "}
+            {t("championship", { position: team.championship.position })}
           </p>
         </div>
       </div>
@@ -97,7 +103,7 @@ export function TeamCard({
 
       <dl className="grid grid-cols-2 gap-2 text-[11px]">
         <div>
-          <dt className="text-muted-foreground uppercase">Car pace</dt>
+          <dt className="text-muted-foreground uppercase">{t("carPace")}</dt>
           <dd className="mt-1 h-1.5 overflow-hidden rounded-full bg-muted">
             <div
               className="h-full rounded-full"
@@ -106,7 +112,9 @@ export function TeamCard({
           </dd>
         </div>
         <div>
-          <dt className="text-muted-foreground uppercase">Reliability</dt>
+          <dt className="text-muted-foreground uppercase">
+            {t("reliability")}
+          </dt>
           <dd className="font-mono">
             {Math.round(team.car.reliability * 100)}%
           </dd>

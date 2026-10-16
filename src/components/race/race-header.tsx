@@ -3,25 +3,17 @@
 import { Button } from "@/components/ui/button";
 import type { TrackStatus } from "@/engine";
 import { SPEEDS, type Speed } from "@/game/race-runner";
+import { Link } from "@/i18n/navigation";
 import { formatRaceTime } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { CircleHelp, CloudRain, Pause, Play, Sun } from "lucide-react";
-import Link from "next/link";
+import { useTranslations } from "next-intl";
 
-const STATUS: Record<
-  TrackStatus | "finished",
-  { label: string; className: string }
-> = {
-  green: {
-    label: "Green flag",
-    className: "bg-emerald-500/15 text-emerald-400",
-  },
-  sc: { label: "Safety Car", className: "bg-amber-400/20 text-amber-300" },
-  vsc: { label: "Virtual SC", className: "bg-amber-400/20 text-amber-300" },
-  finished: {
-    label: "Chequered flag",
-    className: "bg-foreground/10 text-foreground",
-  },
+const STATUS_STYLE: Record<TrackStatus | "finished", string> = {
+  green: "bg-emerald-500/15 text-emerald-400",
+  sc: "bg-amber-400/20 text-amber-300",
+  vsc: "bg-amber-400/20 text-amber-300",
+  finished: "bg-foreground/10 text-foreground",
 };
 
 export function RaceHeader({
@@ -50,13 +42,13 @@ export function RaceHeader({
   /** Only shown when the player runs a team. */
   autoPause?: { enabled: boolean; onToggle: () => void };
 }) {
-  const s = STATUS[status];
+  const t = useTranslations("race");
   return (
     <header className="flex flex-wrap items-center gap-x-6 gap-y-2 rounded-xl border bg-card px-4 py-2.5">
       <Link
         href="/"
         className="text-sm font-black text-muted-foreground uppercase italic hover:text-foreground"
-        title="Back to the home page"
+        title={t("homeTitle")}
       >
         Box <span className="text-primary">Box</span>
       </Link>
@@ -70,15 +62,15 @@ export function RaceHeader({
       <span
         className={cn(
           "rounded-md px-2 py-1 text-xs font-bold uppercase",
-          s.className,
+          STATUS_STYLE[status],
         )}
       >
-        {s.label}
+        {t(`status.${status}`)}
       </span>
 
       <span
         className="flex items-center gap-1.5 text-sm text-muted-foreground"
-        title="Track wetness"
+        title={t("wetnessTitle")}
       >
         {raining || wetness > 0.15 ? (
           <CloudRain className="size-4 text-sky-400" />
@@ -86,7 +78,9 @@ export function RaceHeader({
           <Sun className="size-4 text-amber-300" />
         )}
         <span className="font-mono">
-          {wetness > 0.02 ? `${Math.round(wetness * 100)}% wet` : "Dry"}
+          {wetness > 0.02
+            ? t("wet", { percent: Math.round(wetness * 100) })
+            : t("dry")}
         </span>
       </span>
 
@@ -99,8 +93,8 @@ export function RaceHeader({
           href="/how-to-play"
           target="_blank"
           className="grid size-8 place-items-center rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground"
-          title="How to play (opens in a new tab)"
-          aria-label="How to play"
+          title={t("howTo")}
+          aria-label={t("howTo")}
         >
           <CircleHelp className="size-5" />
         </Link>
@@ -109,7 +103,7 @@ export function RaceHeader({
             type="button"
             onClick={autoPause.onToggle}
             aria-pressed={autoPause.enabled}
-            title="Pause automatically on Safety Cars, rain and tyre warnings"
+            title={t("autoPauseHint")}
             className={cn(
               "rounded-lg px-2.5 py-1.5 text-xs font-semibold transition-colors",
               autoPause.enabled
@@ -117,7 +111,7 @@ export function RaceHeader({
                 : "bg-muted text-muted-foreground",
             )}
           >
-            Auto-pause {autoPause.enabled ? "on" : "off"}
+            {t("autoPause", { enabled: String(autoPause.enabled) })}
           </button>
         )}
         <Button
@@ -125,14 +119,14 @@ export function RaceHeader({
           size="icon"
           onClick={onTogglePause}
           disabled={status === "finished"}
-          aria-label={paused ? "Resume" : "Pause"}
+          aria-label={paused ? t("resume") : t("pause")}
         >
           {paused ? <Play /> : <Pause />}
         </Button>
         <div
           className="flex rounded-lg bg-muted p-0.5"
           role="group"
-          aria-label="Simulation speed"
+          aria-label={t("speed")}
         >
           {SPEEDS.map((x) => (
             <button

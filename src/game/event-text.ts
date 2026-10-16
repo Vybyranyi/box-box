@@ -1,28 +1,24 @@
 import type { Race, TimedEvent } from "@/engine";
 import { formatLapTime } from "@/lib/format";
+import { msg, tyresPlural, type Msg } from "./messages";
 
-const COMPOUND_NAME = {
-  soft: "softs",
-  medium: "mediums",
-  hard: "hards",
-  intermediate: "inters",
-  wet: "full wets",
-} as const;
+/** Marks a radio message from the race engineer rather than a driver. */
+export const ENGINEER = "@engineer";
 
 export type FeedItem = {
   id: number;
   lap: number;
-  text: string;
+  message: Msg;
   tone: "info" | "warning" | "danger" | "good";
   /** Race control announcements vs team radio. */
   kind: "control" | "radio";
-  /** Radio speaker: a driver code or "Engineer". */
+  /** Radio speaker: a driver code or ENGINEER. */
   from?: string;
   /** Speaker's team colour. */
   color?: string;
 };
 
-/** Human-readable line for the race feed, or null for events not worth showing. */
+/** Race control line for an event, or null for events not worth showing. */
 export function describeEvent(race: Race, event: TimedEvent): FeedItem | null {
   const item = describe(race, event);
   return item ? { ...item, id: event.seq * 2, kind: "control" } : null;
@@ -35,81 +31,81 @@ function describe(
   const code = (i: number) => race.cars[i].code;
   // event.lap counts completed laps; show the lap being raced.
   const lap = Math.min(event.lap + 1, race.laps);
+  const line = (
+    key: string,
+    tone: FeedItem["tone"],
+    values?: Msg["values"],
+  ) => ({
+    lap,
+    tone,
+    message: msg(`control.${key}`, values),
+  });
+
   switch (event.type) {
     case "start":
-      return { lap, text: "Lights out and away we go!", tone: "good" };
+      return line("start", "good");
     case "overtake":
-      return {
-        lap,
-        text: `${code(event.car)} passes ${code(event.on)}`,
-        tone: "info",
-      };
+      return line("overtake", "info", {
+        car: code(event.car),
+        on: code(event.on),
+      });
     case "pit-entry":
-      return {
-        lap,
-        text: `${code(event.car)} pits for ${COMPOUND_NAME[event.compound]}`,
-        tone: "info",
-      };
+      return line("pitEntry", "info", {
+        car: code(event.car),
+        compound: tyresPlural(event.compound),
+      });
     case "pit-exit":
       return event.slow
-        ? {
-            lap,
-            text: `Slow stop for ${code(event.car)}: ${event.stationarySeconds.toFixed(1)} s`,
-            tone: "warning",
-          }
+        ? line("slowStop", "warning", {
+            car: code(event.car),
+            seconds: event.stationarySeconds.toFixed(1),
+          })
         : null;
     case "sc-deployed":
-      return { lap, text: "Safety Car deployed", tone: "warning" };
+      return line("scDeployed", "warning");
     case "sc-ending":
-      return { lap, text: "Safety Car in this lap", tone: "warning" };
+      return line("scEnding", "warning");
     case "vsc-deployed":
-      return { lap, text: "Virtual Safety Car", tone: "warning" };
+      return line("vscDeployed", "warning");
     case "vsc-ending":
-      return { lap, text: "VSC ending", tone: "warning" };
+      return line("vscEnding", "warning");
     case "green":
-      return { lap, text: "Green flag, racing resumes", tone: "good" };
+      return line("green", "good");
     case "rain-start":
-      return { lap, text: "Rain is falling", tone: "warning" };
+      return line("rainStart", "warning");
     case "rain-stop":
-      return { lap, text: "Rain has stopped", tone: "info" };
+      return line("rainStop", "info");
     case "crash":
-      return { lap, text: `${code(event.car)} crashes out!`, tone: "danger" };
+      return line("crash", "danger", { car: code(event.car) });
     case "mechanical":
-      return {
-        lap,
-        text: `${code(event.car)} retires with a problem`,
-        tone: "danger",
-      };
+      return line("mechanical", "danger", { car: code(event.car) });
     case "puncture":
-      return { lap, text: `Puncture for ${code(event.car)}!`, tone: "danger" };
+      return line("puncture", "danger", { car: code(event.car) });
     case "fastest-lap":
       return lap > 1
-        ? {
-            lap,
-            text: `Fastest lap: ${code(event.car)} ${formatLapTime(event.lapTime)}`,
-            tone: "good",
-          }
+        ? line("fastestLap", "good", {
+            car: code(event.car),
+            time: formatLapTime(event.lapTime),
+          })
         : null;
     case "chequered-flag":
-      return { lap, text: "Chequered flag!", tone: "good" };
+      return line("chequered", "good");
     case "finished":
       return event.position <= 3
-        ? {
-            lap,
-            text: `${code(event.car)} finishes P${event.position}`,
-            tone: "good",
-          }
+        ? line("finished", "good", {
+            car: code(event.car),
+            position: event.position,
+          })
         : null;
     case "disqualified":
-      return {
-        lap,
-        text: `${code(event.car)} disqualified: ${event.reason}`,
-        tone: "danger",
-      };
+      return line("disqualified", "danger", { car: code(event.car) });
     case "team-order":
       return event.order === "free"
         ? null
-        : { lap, text: `Team order: ${event.order}`, tone: "info" };
+        : line(
+            event.order === "swap" ? "teamOrderSwap" : "teamOrderHold",
+            "info",
+          );
     default:
       return null;
   }

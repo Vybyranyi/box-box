@@ -1,3 +1,4 @@
+import { tr } from "./test-i18n";
 import { drivers, getTrack, teams, tracks } from "@/data";
 import { createRace } from "@/engine";
 import { describe, expect, it } from "vitest";
@@ -9,13 +10,13 @@ describe("team objectives", () => {
   it("expects more from faster cars", () => {
     const monza = getTrack("monza");
     const ranking = teamRanking(teams, monza);
-    expect(teamObjective(teams, monza, ranking[0].id).text).toBe(
+    expect(tr(teamObjective(teams, monza, ranking[0].id).text)).toBe(
       "Win the race",
     );
-    expect(teamObjective(teams, monza, ranking[1].id).text).toBe(
+    expect(tr(teamObjective(teams, monza, ranking[1].id).text)).toBe(
       "Finish on the podium",
     );
-    expect(teamObjective(teams, monza, ranking[10].id).text).toBe(
+    expect(tr(teamObjective(teams, monza, ranking[10].id).text)).toBe(
       "Bring both cars home",
     );
     for (const [i, t] of ranking.entries())

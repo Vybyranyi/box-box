@@ -10,21 +10,15 @@ import {
   planSummary,
   recommendedCompound,
 } from "@/game/pit-wall";
+import { useMsg } from "@/i18n/use-msg";
 import { formatGap, formatLapTime } from "@/lib/format";
 import { cn } from "@/lib/utils";
+import { useTranslations } from "next-intl";
 import { useState } from "react";
 import { TYRE_COLORS, TyreBadge } from "./tyre-badge";
 
 const COMPOUNDS: Compound[] = ["soft", "medium", "hard", "intermediate", "wet"];
-const PACE: { mode: PaceMode; label: string; hint: string }[] = [
-  { mode: "push", label: "Push", hint: "Faster, but wears tyres ~35% quicker" },
-  { mode: "balanced", label: "Balanced", hint: "Normal race pace" },
-  {
-    mode: "conserve",
-    label: "Conserve",
-    hint: "Slower, tyres last ~30% longer",
-  },
-];
+const PACE: PaceMode[] = ["push", "balanced", "conserve"];
 
 export function PlayerCarCard({
   race,
@@ -39,6 +33,8 @@ export function PlayerCarCard({
   onSelect: () => void;
   onCommand: (command: RaceCommand) => void;
 }) {
+  const t = useTranslations("car");
+  const translate = useMsg();
   const driver = race.driver(car);
   const team = race.team(car);
   const [compound, setCompound] = useState<Compound | null>(null);
@@ -60,7 +56,7 @@ export function PlayerCarCard({
         selected && "ring-2 ring-primary/60",
       )}
       style={{ borderTopColor: team.color, borderTopWidth: 3 }}
-      aria-label={`${driver.lastName} controls`}
+      aria-label={t("controls", { driver: driver.lastName })}
     >
       <div className="flex items-center gap-3">
         <DriverPortrait driver={driver} team={team} className="size-11" />
@@ -73,7 +69,7 @@ export function PlayerCarCard({
             {car.position > 1 && car.interval !== null
               ? `▲ ${formatGap(car.interval)}`
               : car.position === 1
-                ? "Leading"
+                ? t("leading")
                 : "▲ -"}
             {"  "}
             {behind && behind.interval !== null && behind.status === "racing"
@@ -82,13 +78,13 @@ export function PlayerCarCard({
           </p>
         </div>
         <span className="font-mono text-2xl font-black">
-          {car.status === "retired" ? "DNF" : `P${car.position}`}
+          {car.status === "retired" ? t("dnf") : `P${car.position}`}
         </span>
       </div>
 
       {active && (
         <>
-          <div className="flex items-center gap-2" title="Estimated tyre wear">
+          <div className="flex items-center gap-2" title={t("wearTitle")}>
             <TyreBadge compound={car.tyre.compound} />
             <div className="h-2 flex-1 overflow-hidden rounded-full bg-muted">
               <div
@@ -101,27 +97,27 @@ export function PlayerCarCard({
               />
             </div>
             <span className="w-24 text-right font-mono text-[11px] text-muted-foreground">
-              ~{Math.round(wear)}% · {lapsLeft ?? "-"}L left
+              {t("wear", { wear: Math.round(wear), laps: lapsLeft ?? "-" })}
             </span>
           </div>
 
           <div className="flex gap-1 font-mono text-[11px]">
             {lastLaps.length === 0 && (
-              <span className="text-muted-foreground">No laps yet</span>
+              <span className="text-muted-foreground">{t("noLaps")}</span>
             )}
-            {lastLaps.map((t, i) => (
+            {lastLaps.map((time, i) => (
               <span
                 key={i}
                 className={cn(
                   "rounded bg-muted px-1.5 py-0.5",
-                  t === car.bestLapTime && "text-emerald-400",
+                  time === car.bestLapTime && "text-emerald-400",
                   race.fastestLap?.car === car.index &&
-                    t === race.fastestLap.time &&
+                    time === race.fastestLap.time &&
                     "text-[#C77DFF]",
                   i > 0 && "opacity-60",
                 )}
               >
-                {formatLapTime(t)}
+                {formatLapTime(time)}
               </span>
             ))}
           </div>
@@ -129,45 +125,45 @@ export function PlayerCarCard({
           <div
             className="flex rounded-lg bg-muted p-0.5"
             role="group"
-            aria-label="Pace mode"
+            aria-label={t("pace.label")}
           >
-            {PACE.map((p) => (
+            {PACE.map((mode) => (
               <button
-                key={p.mode}
+                key={mode}
                 type="button"
-                title={p.hint}
+                title={t(`pace.${mode}Hint`)}
                 onClick={(e) => {
                   e.stopPropagation();
                   onCommand({
                     type: "pace",
                     driverId: car.driverId,
-                    mode: p.mode,
+                    mode,
                   });
                 }}
                 className={cn(
                   "flex-1 rounded-md py-1 text-xs font-semibold transition-colors",
-                  car.paceMode === p.mode
-                    ? p.mode === "push"
+                  car.paceMode === mode
+                    ? mode === "push"
                       ? "bg-red-500/80 text-white"
-                      : p.mode === "conserve"
+                      : mode === "conserve"
                         ? "bg-sky-600/80 text-white"
                         : "bg-background text-foreground"
                     : "text-muted-foreground hover:text-foreground",
                 )}
               >
-                {p.label}
+                {t(`pace.${mode}`)}
               </button>
             ))}
           </div>
 
           {car.status === "pit" ? (
             <p className="rounded-md bg-amber-400/15 py-1.5 text-center text-xs font-bold text-amber-300 uppercase">
-              In the pit lane
+              {t("inPitLane")}
             </p>
           ) : car.pitRequest ? (
             <div className="flex items-center gap-2">
               <p className="flex flex-1 items-center gap-2 rounded-md bg-primary/20 px-2 py-1.5 text-xs font-bold uppercase">
-                Box this lap <TyreBadge compound={car.pitRequest} />
+                {t("boxThisLap")} <TyreBadge compound={car.pitRequest} />
               </p>
               <Button
                 size="sm"
@@ -178,7 +174,7 @@ export function PlayerCarCard({
                   onCommand({ type: "cancel-pit", driverId: car.driverId });
                 }}
               >
-                Cancel
+                {t("cancel")}
               </Button>
             </div>
           ) : (
@@ -186,7 +182,7 @@ export function PlayerCarCard({
               <div
                 className="flex gap-1"
                 role="radiogroup"
-                aria-label="Tyre for the next stop"
+                aria-label={t("nextTyre")}
               >
                 {COMPOUNDS.map((c) => (
                   <button
@@ -221,7 +217,7 @@ export function PlayerCarCard({
                   });
                 }}
               >
-                Box
+                {t("box")}
               </Button>
             </div>
           )}
@@ -234,7 +230,7 @@ export function PlayerCarCard({
           mustSwitch && race.laps - car.lap < 15 && "text-amber-300",
         )}
       >
-        {planSummary(race, car)}
+        {translate(planSummary(race, car))}
       </p>
     </section>
   );

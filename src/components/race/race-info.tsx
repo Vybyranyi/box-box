@@ -3,6 +3,7 @@
 import { DriverPortrait } from "@/components/driver-portrait";
 import type { CarState, Race } from "@/engine";
 import { formatLapTime } from "@/lib/format";
+import { useTranslations } from "next-intl";
 import { TYRE_COLORS, TyreBadge } from "./tyre-badge";
 
 /** Spectator panel: the selected car and the fastest lap. */
@@ -16,13 +17,14 @@ export function RaceInfo({ race, car }: { race: Race; car: CarState | null }) {
 }
 
 export function FastestLap({ race }: { race: Race }) {
+  const t = useTranslations("car");
   const fastest = race.fastestLap;
   if (!fastest) return null;
   return (
     <section className="flex items-center justify-between rounded-xl border bg-card px-3 py-2 text-sm">
       <span className="flex items-center gap-2 text-xs font-semibold text-muted-foreground uppercase">
         <span className="size-2 rounded-full bg-[#B138DD]" />
-        Fastest lap
+        {t("fastestLap")}
       </span>
       <span className="font-mono">
         <b>{race.cars[fastest.car].code}</b> {formatLapTime(fastest.time)}{" "}
@@ -33,16 +35,17 @@ export function FastestLap({ race }: { race: Race }) {
 }
 
 function CarCard({ race, car }: { race: Race; car: CarState }) {
+  const t = useTranslations("car");
   const driver = race.driver(car);
   const team = race.team(car);
   const wear = Math.min(100, car.tyre.wear);
   const status =
     car.status === "retired"
-      ? "Retired"
+      ? t("retired")
       : car.status === "pit"
-        ? "In the pits"
+        ? t("inPits")
         : car.status === "finished"
-          ? "Finished"
+          ? t("finished")
           : null;
 
   return (
@@ -89,9 +92,9 @@ function CarCard({ race, car }: { race: Race; car: CarState }) {
       </div>
 
       <dl className="grid grid-cols-3 gap-2 font-mono text-xs">
-        <Stat label="Last" value={formatLapTime(car.lastLapTime)} />
-        <Stat label="Best" value={formatLapTime(car.bestLapTime)} />
-        <Stat label="Stops" value={String(car.pitStops.length)} />
+        <Stat label={t("last")} value={formatLapTime(car.lastLapTime)} />
+        <Stat label={t("best")} value={formatLapTime(car.bestLapTime)} />
+        <Stat label={t("stops")} value={String(car.pitStops.length)} />
       </dl>
     </section>
   );

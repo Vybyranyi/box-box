@@ -31,8 +31,7 @@ export function TrackOutline({
     <svg
       viewBox={`${minX - pad} ${minY - pad} ${maxX - minX + pad * 2} ${maxY - minY + pad * 2}`}
       className={cn("text-foreground", className)}
-      role="img"
-      aria-label={`${track.name} circuit outline`}
+      aria-hidden="true"
     >
       <path
         d={d}

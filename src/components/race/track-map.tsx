@@ -2,6 +2,7 @@
 
 import type { RaceRunner } from "@/game/race-runner";
 import { TrackRenderer, type RenderOptions } from "@/game/track-renderer";
+import { useTranslations } from "next-intl";
 import { useEffect, useRef } from "react";
 
 /**
@@ -17,6 +18,7 @@ export function TrackMap({
   options: RenderOptions;
   register: (draw: (() => void) | null) => void;
 }) {
+  const t = useTranslations();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const optionsRef = useRef(options);
   useEffect(() => {
@@ -43,7 +45,9 @@ export function TrackMap({
     <canvas
       ref={canvasRef}
       className="size-full"
-      aria-label={`${runner.race.track.name} race map`}
+      aria-label={t("race.mapLabel", {
+        track: t(`tracks.${runner.race.track.id}` as never),
+      })}
     />
   );
 }

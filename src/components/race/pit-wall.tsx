@@ -4,21 +4,10 @@ import { RemoteImage } from "@/components/remote-image";
 import { getTeamImage } from "@/data/images";
 import type { Race, RaceCommand, TeamOrder } from "@/engine";
 import { cn } from "@/lib/utils";
+import { useTranslations } from "next-intl";
 import { PlayerCarCard } from "./player-car-card";
 
-const ORDERS: { order: TeamOrder; label: string; hint: string }[] = [
-  {
-    order: "free",
-    label: "Free to race",
-    hint: "Drivers may fight each other",
-  },
-  { order: "hold", label: "Hold", hint: "No overtaking between teammates" },
-  {
-    order: "swap",
-    label: "Swap",
-    hint: "The car ahead lets its teammate through when they're close",
-  },
-];
+const ORDERS: TeamOrder[] = ["free", "hold", "swap"];
 
 /** The player's team: both cars and team orders. */
 export function PitWall({
@@ -34,7 +23,8 @@ export function PitWall({
   onSelect: (driverId: string) => void;
   onCommand: (command: RaceCommand) => void;
 }) {
-  const team = race.config.teams.find((t) => t.id === teamId)!;
+  const t = useTranslations("pitWall");
+  const team = race.config.teams.find((x) => x.id === teamId)!;
   const cars = race.cars
     .filter((c) => c.teamId === teamId)
     .sort((a, b) => a.position - b.position);
@@ -58,7 +48,7 @@ export function PitWall({
           }
         />
         <h2 className="text-sm font-bold uppercase">
-          Pit wall · {team.shortName}
+          {t("title", { team: team.shortName })}
         </h2>
       </header>
 
@@ -75,36 +65,32 @@ export function PitWall({
 
       <section
         className="flex flex-col gap-1.5 rounded-xl border bg-card p-3"
-        aria-label="Team orders"
+        aria-label={t("orders")}
       >
         <h3 className="text-[11px] font-semibold text-muted-foreground uppercase">
-          Team orders
+          {t("orders")}
         </h3>
         <div className="flex rounded-lg bg-muted p-0.5" role="group">
-          {ORDERS.map((o) => (
+          {ORDERS.map((order) => (
             <button
-              key={o.order}
+              key={order}
               type="button"
-              title={o.hint}
+              title={t(`${order}Hint`)}
               disabled={!bothRunning}
-              onClick={() =>
-                onCommand({ type: "team-order", teamId, order: o.order })
-              }
+              onClick={() => onCommand({ type: "team-order", teamId, order })}
               className={cn(
                 "flex-1 rounded-md py-1 text-xs font-semibold transition-colors disabled:opacity-40",
-                current === o.order
+                current === order
                   ? "bg-background text-foreground"
                   : "text-muted-foreground hover:text-foreground",
               )}
             >
-              {o.label}
+              {t(order)}
             </button>
           ))}
         </div>
         {current === "swap" && (
-          <p className="text-[11px] text-amber-300">
-            Waiting for the cars to be within 2.5 s…
-          </p>
+          <p className="text-[11px] text-amber-300">{t("waitingSwap")}</p>
         )}
       </section>
     </div>

@@ -4,7 +4,9 @@ import { Button } from "@/components/ui/button";
 import type { Compound, Race, RaceCommand } from "@/engine";
 import type { RaceAlert } from "@/game/alerts";
 import { recommendedCompound } from "@/game/pit-wall";
+import { useMsg } from "@/i18n/use-msg";
 import { CloudRain, Siren, TriangleAlert } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { TyreBadge } from "./tyre-badge";
 
 /** Decision prompt shown over the map when auto-pause stops the race. */
@@ -20,6 +22,9 @@ export function RaceAlertBanner({
   /** Close the prompt and resume the race. */
   onDismiss: () => void;
 }) {
+  const t = useTranslations("alertActions");
+  const translate = useMsg();
+  const title = translate(alert.title);
   const cars = alert.cars
     .map((i) => race.cars[i])
     .filter((c) => c.status === "racing");
@@ -44,13 +49,15 @@ export function RaceAlertBanner({
     <div
       className="absolute inset-x-3 top-3 z-10 mx-auto max-w-lg rounded-xl border border-amber-400/40 bg-background/95 p-4 shadow-2xl backdrop-blur"
       role="alertdialog"
-      aria-label={alert.title}
+      aria-label={title}
     >
       <div className="flex items-start gap-3">
         <Icon className="mt-0.5 size-5 shrink-0 text-amber-300" />
         <div className="flex-1">
-          <h2 className="font-bold uppercase">{alert.title}</h2>
-          <p className="text-sm text-muted-foreground">{alert.body}</p>
+          <h2 className="font-bold uppercase">{title}</h2>
+          <p className="text-sm text-muted-foreground">
+            {translate(alert.body)}
+          </p>
         </div>
       </div>
       <div className="mt-3 flex flex-wrap gap-2">
@@ -62,12 +69,13 @@ export function RaceAlertBanner({
               onClick={() => box([choice])}
               disabled={choice.car.pitRequest !== null}
             >
-              Box {choice.car.code} <TyreBadge compound={choice.compound} />
+              {t("box", { car: choice.car.code })}{" "}
+              <TyreBadge compound={choice.compound} />
             </Button>
           ))}
         {alert.kind !== "puncture" && choices.length > 1 && (
           <Button variant="secondary" onClick={() => box(choices)}>
-            Box both
+            {t("boxBoth")}
           </Button>
         )}
         {alert.kind === "puncture" &&
@@ -77,11 +85,11 @@ export function RaceAlertBanner({
               variant="secondary"
               onClick={() => box([choice])}
             >
-              Fit <TyreBadge compound={choice.compound} />
+              {t("fit")} <TyreBadge compound={choice.compound} />
             </Button>
           ))}
         <Button className="ml-auto" onClick={onDismiss}>
-          {alert.kind === "puncture" ? "OK" : "Stay out"}{" "}
+          {alert.kind === "puncture" ? t("ok") : t("stayOut")}{" "}
           <kbd className="ml-1 font-mono text-[10px] opacity-70">Esc</kbd>
         </Button>
       </div>

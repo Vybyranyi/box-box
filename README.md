@@ -24,7 +24,7 @@ npm run dev
 | `npm run data`      | Regenerate `src/data` from APIs |
 | `npm run sim`       | Simulate races in the terminal  |
 
-Stack: Next.js, TypeScript, Tailwind, shadcn/ui, Vitest.
+Stack: Next.js, TypeScript, Tailwind, shadcn/ui, next-intl (English and Ukrainian), Vitest.
 
 ## Race engine
 

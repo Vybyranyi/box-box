@@ -1,28 +1,17 @@
 import type { Track } from "@/data/types";
 import type { WeatherMode } from "@/engine";
 
+/** Race distances; labels live in messages (setup.distances.*). */
 export const DISTANCES = [
-  { id: "sprint", label: "Sprint", detail: "10 laps", share: null },
-  { id: "quarter", label: "25%", detail: "Quarter distance", share: 0.25 },
-  { id: "half", label: "50%", detail: "Half distance", share: 0.5 },
-  { id: "full", label: "Full", detail: "Full Grand Prix", share: 1 },
+  { id: "sprint", share: null },
+  { id: "quarter", share: 0.25 },
+  { id: "half", share: 0.5 },
+  { id: "full", share: 1 },
 ] as const;
 export type DistanceId = (typeof DISTANCES)[number]["id"];
 
-export const WEATHER_OPTIONS: {
-  id: WeatherMode;
-  label: string;
-  detail: string;
-}[] = [
-  { id: "auto", label: "Realistic", detail: "Based on the circuit's climate" },
-  { id: "dry", label: "Dry", detail: "No rain" },
-  {
-    id: "mixed",
-    label: "Changeable",
-    detail: "Rain arrives or clears mid-race",
-  },
-  { id: "wet", label: "Wet", detail: "Rain all race" },
-];
+/** Weather modes offered in setup; labels live in messages (setup.weathers.*). */
+export const WEATHER_OPTIONS: WeatherMode[] = ["auto", "dry", "mixed", "wet"];
 
 export function lapsFor(track: Track, distance: DistanceId): number {
   const option = DISTANCES.find((d) => d.id === distance)!;
